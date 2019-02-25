@@ -6,12 +6,10 @@
 package controller;
 
 import java.net.URL;
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ResourceBundle;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.PasswordField;
@@ -30,14 +28,35 @@ public class LoginController implements Initializable {
   @FXML
   private PasswordField passwordField;
   
-  @FXML
-  private void login(ActionEvent event) {
   
+  
+  @FXML
+  private void login() {
+    
+    PreparedStatement stmt;
+    ResultSet rs = null;
+    
+    try {
+      
+      stmt = DBConnection.conn.prepareStatement("SELECT * FROM user WHERE userName = ? AND password = ?");
+      stmt.setString(1, usernameField.getText());
+      stmt.setString(2, passwordField.getText());
+      stmt.execute();
+      rs = stmt.getResultSet();
+      
+      if (rs.next()) {
+        String country = rs.getString("userId");
+        System.out.println(country);
+      }
+    } catch (SQLException ex) {
+      ex.printStackTrace();
+    }
   }
   
   @Override
   public void initialize(URL url, ResourceBundle rb) {
-    // TODO
+    usernameField.setText("test");
+    passwordField.setText("test");
   }  
   
 }
