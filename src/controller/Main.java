@@ -7,6 +7,8 @@ package controller;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -24,10 +26,13 @@ public class Main extends Application {
   
   @Override
   public void start(Stage stage) throws Exception {
+    Locale.setDefault(new Locale("es"));
+    FXMLLoader root = new FXMLLoader(getClass().getResource("/view/login.fxml"));
+    root.setResources(ResourceBundle.getBundle("view.Schedule"));
+    Parent rootParent = (Parent) root.load();
     
-    Parent root = FXMLLoader.load(getClass().getResource("/view/login.fxml"));
     
-    Scene scene = new Scene(root);
+    Scene scene = new Scene(rootParent);
     
     stage.setScene(scene);
     stage.show();
