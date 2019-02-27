@@ -5,18 +5,25 @@
  */
 package controller;
 
+import java.io.IOException;
 import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Locale;
 import java.util.ResourceBundle;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.AnchorPane;
+import javafx.stage.Stage;
+import model.User;
 import util.DBConnection;
 
 /**
@@ -24,7 +31,10 @@ import util.DBConnection;
  * @author Austyn
  */
 public class LoginController implements Initializable {
-
+  
+  @FXML
+  private AnchorPane anchorPane;
+  
   @FXML
   private TextField usernameField;
   
@@ -41,30 +51,70 @@ public class LoginController implements Initializable {
   private Label errorMsg;
   
   private ResourceBundle rb;
+  
+  public static User currentUser;
 
   @FXML
-  private void login() {
+  private void login() throws SQLException, IOException{
     
     PreparedStatement stmt;
     ResultSet rs = null;
     
-    try {
+    if (isValidInput()){
       
       stmt = DBConnection.conn.prepareStatement("SELECT * FROM user WHERE userName = ? AND password = ?");
       stmt.setString(1, usernameField.getText());
       stmt.setString(2, passwordField.getText());
       stmt.execute();
       rs = stmt.getResultSet();
-      
+
       if (rs.next()) {
-        String country = rs.getString("userId");
-        System.out.println(country);
+        User user = new User();
+        user.setUsername(usernameField.getText());
+        currentUser = user;
+        Stage stage = (Stage) anchorPane.getScene().getWindow();
+        stage.close();
+        viewScheduleStage();
       }else{
         errorMsg.setText(rb.getString("invalidUser"));
       }
-    } catch (SQLException ex) {
-      ex.printStackTrace();
+    }  
+
+  }
+  
+  private boolean isValidInput(){
+    boolean validInput = true;
+    
+    if (usernameField.getText().trim().equals("") ||
+        passwordField.getText().trim().equals("")){
+      
+      validInput = false;
+      
+      Alert alert = new Alert(Alert.AlertType.INFORMATION);
+      alert.setTitle("Missing Value");
+      alert.setHeaderText("At least one of the inputs is missing a value");
+      alert.setContentText("All fields are mandatory.");
+      alert.showAndWait();
+      
     }
+    
+    return validInput;
+  }
+  
+  private void viewScheduleStage() throws IOException, SQLException{
+    FXMLLoader scheduleLoader = new FXMLLoader(getClass().getResource("/view/Schedules.fxml"));
+    scheduleLoader.setResources(rb);
+    Parent addPartParent = (Parent) scheduleLoader.load();
+    
+    SchedulesController schedController = scheduleLoader.getController();
+    schedController.getAllCustomers();
+    
+    Scene addPartScene = new Scene(addPartParent);
+
+    Stage stage = new Stage();
+    stage.setScene(addPartScene);
+    stage.setTitle("Schedules");
+    stage.show();
   }
   
   @Override

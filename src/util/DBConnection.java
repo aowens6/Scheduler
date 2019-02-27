@@ -19,8 +19,8 @@ public class DBConnection {
   
   public static void connect() throws ClassNotFoundException, SQLException, IOException{
     Class.forName(JDBC_DRIVER);
-    Logging.init();
-    Logging.logger.info( DBUSER);
+//    Logging.init();
+//    Logging.logger.info( DBUSER);
     conn = DriverManager.getConnection(DB_URL, DBUSER, DBPASS);
   }
 

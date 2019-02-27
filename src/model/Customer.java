@@ -13,10 +13,11 @@ public class Customer {
   
   private String customerId;
   private String customerName;
+  private String addressId;
   private String address;
   private String address2;
   private City city;
-  private String country;
+  private Country country;
   private String postalCode;
   private String phone;
 
@@ -25,9 +26,10 @@ public class Customer {
 
   }
 
-  public Customer(String customerId, String customerName, String address, String address2, City city, String country, String postalCode, String phone) {
+  public Customer(String customerId, String customerName, String addressId, String address, String address2, City city, Country country, String postalCode, String phone) {
       this.customerId = customerId;
       this.customerName = customerName;
+      this.addressId = addressId;
       this.address = address;
       this.address2 = address2;
       this.city = city;
@@ -52,14 +54,22 @@ public class Customer {
     this.customerName = customerName;
   }
 
+  public String getAddressId() {
+    return addressId;
+  }
+
+  public void setAddressId(String addressId) {
+    this.addressId = address;
+  }
+  
   public String getAddress() {
     return address;
   }
 
   public void setAddress(String address) {
-    this.address = address;
+    this.address2 = address;
   }
-
+  
   public String getAddress2() {
     return address2;
   }
@@ -76,11 +86,11 @@ public class Customer {
     this.city = city;
   }
 
-  public String getCountry() {
+  public Country getCountry() {
     return country;
   }
 
-  public void setCountry(String country) {
+  public void setCountry(Country country) {
     this.country = country;
   }
 

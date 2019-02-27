@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane fx:id="anchorPane" prefHeight="436.0" prefWidth="386.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CustController">
+   <children>
+      <HBox layoutX="35.0" layoutY="36.0" prefHeight="39.0" prefWidth="303.0">
+         <children>
+            <Label fx:id="idLbl" alignment="CENTER" layoutX="44.0" layoutY="55.0" prefHeight="45.0" prefWidth="76.0" text="ID">
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <TextField fx:id="addId" disable="true" layoutX="107.0" layoutY="49.0" prefHeight="39.0" prefWidth="180.0" promptText="Auto-Increment" />
+         </children>
+      </HBox>
+      <HBox layoutX="35.0" layoutY="93.0" prefHeight="39.0" prefWidth="303.0">
+         <children>
+            <Label fx:id="nameLbl" alignment="CENTER" layoutX="44.0" layoutY="55.0" prefHeight="45.0" prefWidth="76.0" text="Name">
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <TextField fx:id="addName" layoutX="107.0" layoutY="49.0" prefHeight="39.0" prefWidth="180.0" />
+         </children>
+      </HBox>
+      <HBox layoutX="35.0" layoutY="150.0" prefHeight="39.0" prefWidth="303.0">
+         <children>
+            <Label fx:id="addrLbl" alignment="CENTER" layoutX="44.0" layoutY="55.0" prefHeight="45.0" prefWidth="76.0" text="Address">
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <TextField fx:id="addAddress" layoutX="107.0" layoutY="49.0" prefHeight="39.0" prefWidth="180.0" />
+         </children>
+      </HBox>
+      <HBox layoutX="35.0" layoutY="319.0" prefHeight="39.0" prefWidth="303.0">
+         <children>
+            <Label fx:id="phoneLbl" alignment="CENTER" layoutX="44.0" layoutY="55.0" prefHeight="45.0" prefWidth="76.0" text="Phone">
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <TextField fx:id="addPhone" layoutX="107.0" layoutY="49.0" prefHeight="39.0" prefWidth="180.0" />
+         </children>
+      </HBox>
+      <Button fx:id="saveBtn" layoutX="150.0" layoutY="372.0" mnemonicParsing="false" onAction="#saveCust" text="Save" />
+      <Button fx:id="cancelBtn" layoutX="222.0" layoutY="372.0" mnemonicParsing="false" onAction="#cancel" text="Cancel" />
+      <HBox layoutX="35.0" layoutY="206.0" prefHeight="39.0" prefWidth="303.0">
+         <children>
+            <Label fx:id="cityLbl" alignment="CENTER" layoutX="44.0" layoutY="55.0" prefHeight="45.0" prefWidth="76.0" text="City">
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <TextField fx:id="addCity" layoutX="107.0" layoutY="49.0" prefHeight="39.0" prefWidth="180.0" />
+         </children>
+      </HBox>
+      <HBox layoutX="35.0" layoutY="263.0" prefHeight="39.0" prefWidth="303.0">
+         <children>
+            <Label fx:id="countryLbl" alignment="CENTER" layoutX="44.0" layoutY="55.0" prefHeight="45.0" prefWidth="76.0" text="Country">
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <TextField fx:id="addCountry" layoutX="107.0" layoutY="49.0" prefHeight="39.0" prefWidth="180.0" />
+         </children>
+      </HBox>
+   </children>
+</AnchorPane>

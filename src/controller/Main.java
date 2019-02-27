@@ -26,12 +26,11 @@ public class Main extends Application {
   
   @Override
   public void start(Stage stage) throws Exception {
-    Locale.setDefault(new Locale("es"));
+//    Locale.setDefault(new Locale("es"));
     FXMLLoader root = new FXMLLoader(getClass().getResource("/view/login.fxml"));
     root.setResources(ResourceBundle.getBundle("view.Schedule"));
     Parent rootParent = (Parent) root.load();
-    
-    
+
     Scene scene = new Scene(rootParent);
     
     stage.setScene(scene);
@@ -42,8 +41,8 @@ public class Main extends Application {
   public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
 
     DBConnection.connect();
-    Logging.init();
-    Logging.logger.info("msg from MAIN");
+//    Logging.init();
+//    Logging.logger.info("msg from MAIN");
     launch(args);
     DBConnection.disconnect();
     
