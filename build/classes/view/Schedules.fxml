@@ -27,7 +27,7 @@
                   <Insets right="10.0" />
                </HBox.margin>
             </Button>
-            <Button layoutX="185.0" layoutY="309.0" mnemonicParsing="false" text="Update">
+            <Button layoutX="185.0" layoutY="309.0" mnemonicParsing="false" onAction="#viewModCustStage" text="Update">
                <opaqueInsets>
                   <Insets />
                </opaqueInsets>

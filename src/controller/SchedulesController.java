@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ResourceBundle;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -38,10 +39,10 @@ public class SchedulesController implements Initializable {
   private TableColumn<Customer, String> nameCol;
   
   @FXML
-  private TableColumn<Address, String> phoneCol;
+  private TableColumn<Customer, String> phoneCol;
   
   @FXML
-  private TableColumn<Address, String> addressCol;
+  private TableColumn<Customer, String> addressCol;
   
   private ResourceBundle rb;
   
@@ -53,8 +54,10 @@ public class SchedulesController implements Initializable {
     this.rb = rb;
     
     nameCol.setCellValueFactory(new PropertyValueFactory<>("customerName"));
-    phoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
-    addressCol.setCellValueFactory(new PropertyValueFactory<>("address"));
+    phoneCol.setCellValueFactory(cellData -> 
+        new SimpleStringProperty(cellData.getValue().getAddress().getPhone()));
+    addressCol.setCellValueFactory(cellData -> 
+        new SimpleStringProperty(cellData.getValue().getAddress().getAddress()));
     
   } 
   
@@ -83,9 +86,8 @@ public class SchedulesController implements Initializable {
         custAddr.setAddress(address.getString("address"));
         custAddr.setAddressId(Integer.parseInt(address.getString("addressId")));
         custAddr.setPhone(address.getString("phone"));
-        
-        cust.setAddress(custAddr.getAddress());
-        cust.setPhone(custAddr.getPhone());
+
+        cust.setAddress(custAddr);
         
         PreparedStatement cityStmt = DBConnection.conn.prepareStatement("SELECT * FROM city where cityId = ?");
         cityStmt.setString(1, address.getString("cityId"));

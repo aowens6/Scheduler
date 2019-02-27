@@ -13,29 +13,19 @@ public class Customer {
   
   private String customerId;
   private String customerName;
-  private String addressId;
-  private String address;
-  private String address2;
+  private Address address;
   private City city;
   private Country country;
-  private String postalCode;
-  private String phone;
-
-
   public Customer(){
 
   }
 
-  public Customer(String customerId, String customerName, String addressId, String address, String address2, City city, Country country, String postalCode, String phone) {
+  public Customer(String customerId, String customerName, Address address, City city, Country country) {
       this.customerId = customerId;
       this.customerName = customerName;
-      this.addressId = addressId;
       this.address = address;
-      this.address2 = address2;
       this.city = city;
       this.country = country;
-      this.postalCode = postalCode;
-      this.phone = phone;
   }
 
   public String getCustomerId() {
@@ -53,29 +43,13 @@ public class Customer {
   public void setCustomerName(String customerName) {
     this.customerName = customerName;
   }
-
-  public String getAddressId() {
-    return addressId;
-  }
-
-  public void setAddressId(String addressId) {
-    this.addressId = address;
-  }
   
-  public String getAddress() {
+  public Address getAddress() {
     return address;
   }
 
-  public void setAddress(String address) {
-    this.address2 = address;
-  }
-  
-  public String getAddress2() {
-    return address2;
-  }
-
-  public void setAddress2(String address2) {
-    this.address2 = address2;
+  public void setAddress(Address address) {
+    this.address = address;
   }
 
   public City getCity() {
@@ -94,21 +68,4 @@ public class Customer {
     this.country = country;
   }
 
-  public String getPostalCode() {
-    return postalCode;
-  }
-
-  public void setPostalCode(String postalCode) {
-    this.postalCode = postalCode;
-  }
-
-  public String getPhone() {
-    return phone;
-  }
-
-  public void setPhone(String phone) {
-    this.phone = phone;
-  }
-  
-  
 }

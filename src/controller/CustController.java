@@ -21,6 +21,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import model.Address;
 import model.City;
 import model.Country;
 import model.Customer;
@@ -45,6 +46,10 @@ public class CustController implements Initializable {
   private Button saveBtn, cancelBtn;
   
   private int nameCtr = 1;
+  
+  private boolean isModifying;
+  
+  private String origName, origAddr, origCity, origCountry, origPhone;
           
   @Override
   public void initialize(URL url, ResourceBundle rb) {
@@ -58,12 +63,20 @@ public class CustController implements Initializable {
   }  
   
   public void setCustomer(Customer customer){
+    isModifying = true;
+    
+    origName = customer.getCustomerName();
+    origAddr = customer.getAddress().getAddress();
+    origCity = customer.getCity().getCity();
+    origCountry = customer.getCountry().getCountry();
+    origPhone = customer.getAddress().getPhone();
+    
     addId.setText(customer.getCustomerId());
-    addName.setText(customer.getCustomerName());
-    addAddress.setText(customer.getAddress());
-    addCity.setText(customer.getCity().getCity());
-    addCountry.setText(customer.getCountry().getCountry());
-    addPhone.setText(customer.getPhone());
+    addName.setText(origName);
+    addAddress.setText(origAddr);
+    addCity.setText(origCity);
+    addCountry.setText(origCountry);
+    addPhone.setText(origPhone);
     
   }
   
@@ -96,6 +109,18 @@ public class CustController implements Initializable {
     ResultSet city = null;
     ResultSet address = null;
     ResultSet customer = null;
+    
+    boolean isNameModified = false;
+    boolean isAddrModified = false;
+    boolean isCityModified = false;
+    boolean isCountryModified = false;
+    boolean isPhoneModified = false;
+    
+    if(!addName.getText().equals(origName)) isNameModified = true;
+    if(!addAddress.getText().equals(origName)) isAddrModified = true;
+    if(!addCity.getText().equals(origName)) isCityModified = true;
+    if(!addCountry.getText().equals(origCountry)) isCountryModified = true;
+    if(!addPhone.getText().equals(origPhone)) isPhoneModified = true;
     
     if(isValidInput()){
 //      Customer cust = new Customer();
@@ -164,16 +189,17 @@ public class CustController implements Initializable {
       custCity.setCityId(Integer.parseInt(city.getString("cityId")));
       custCity.setCity(city.getString("city"));
       custCity.setCountryId(Integer.parseInt(city.getString("countryId")));
-
+      
       PreparedStatement addAddrStmt = DBConnection.conn.prepareStatement("insert into address "
-          + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdateBy) "
-          + "values(?, '', ?, 99999,?, CURRENT_TIMESTAMP,?,?)");
+        + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdateBy) "
+        + "values(?, '', ?, 99999,?, CURRENT_TIMESTAMP,?,?)");
       addAddrStmt.setString(1, addAddress.getText().trim());
       addAddrStmt.setString(2, city.getString("cityId"));
       addAddrStmt.setString(3, addPhone.getText());
       addAddrStmt.setString(4, LoginController.currentUser.getUsername());
       addAddrStmt.setString(5, LoginController.currentUser.getUsername());
       addAddrStmt.executeUpdate();
+      
 
       PreparedStatement findNewAddrStmt = DBConnection.conn.prepareStatement("select * from address where "
               + "address = ?");
@@ -181,6 +207,11 @@ public class CustController implements Initializable {
       address = findNewAddrStmt.executeQuery();
       
       address.first();
+      
+      Address custAddr = new Address();
+      custAddr.setAddressId(Integer.parseInt(address.getString("addressId")));
+      custAddr.setAddress(address.getString("address"));
+      custAddr.setPhone(address.getString("phone"));
 
       PreparedStatement addCustStmt = DBConnection.conn.prepareStatement("insert into customer "
         + "(customerName, active, addressId, createDate, createdBy, lastUpdateBy) "
@@ -201,8 +232,7 @@ public class CustController implements Initializable {
       cust.setCustomerName(customer.getString("customerName"));
       cust.setCity(custCity);
       cust.setCountry(custCountry);
-      cust.setAddress(address.getString("address"));
-      cust.setPhone(address.getString("phone"));
+      cust.setAddress(custAddr);
 
       SchedulesController.customers.add(cust);
 
