@@ -16,6 +16,7 @@ public class Customer {
   private Address address;
   private City city;
   private Country country;
+  
   public Customer(){
 
   }

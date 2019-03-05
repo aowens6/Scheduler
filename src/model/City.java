@@ -16,6 +16,7 @@ public class City {
   private int countryId;
 
   public City() {
+    
   }
 
   public City(int cityId) {
