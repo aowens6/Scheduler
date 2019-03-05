@@ -65,61 +65,44 @@ public class SchedulesController implements Initializable {
   
   public void getAllCustomers() throws SQLException{
     
-    PreparedStatement stmt = DBConnection.conn.prepareStatement("SELECT * FROM customer");
+    PreparedStatement stmt = DBConnection.conn.prepareStatement(
+      "SELECT customer.customerId, customer.customerName, " +
+        "address.addressId, address.address, " +
+        "address.postalCode, address.phone, " +
+        "city.cityId, city.city, city.countryId, country.countryId, country.country " +
+      "FROM customer, address, city, country " +
+      "WHERE customer.addressId = address.addressId " +
+      "AND address.cityId = city.cityId " +
+      "AND city.countryId = country.countryId " +
+      "ORDER BY customer.customerId;");
+    
     ResultSet customerSet = stmt.executeQuery();
-    ResultSet address = null;
-    ResultSet citySet = null;
-    ResultSet countrySet = null;
     
     while(customerSet.next()){
       
+      Country custCountry = new Country();
+      custCountry.setCountry(customerSet.getString("country.country"));
+      custCountry.setCountryId(Integer.parseInt(customerSet.getString("country.countryId")));
+      
+      City custCity = new City();
+      custCity.setCityId(Integer.parseInt(customerSet.getString("city.cityId")));
+      custCity.setCity(customerSet.getString("city.city"));
+      custCity.setCountryId(Integer.parseInt(customerSet.getString("city.countryId")));
+      
+      Address custAddr = new Address();
+      custAddr.setAddress(customerSet.getString("address.address"));
+      custAddr.setAddressId(Integer.parseInt(customerSet.getString("address.addressId")));
+      custAddr.setPhone(customerSet.getString("address.phone"));
+      
       Customer cust = new Customer();
-      
-      cust.setCustomerId(customerSet.getString("customerId"));
-      cust.setCustomerName(customerSet.getString("customerName"));
-      
-      PreparedStatement addrStmt = DBConnection.conn.prepareStatement("SELECT * FROM address where addressId = ?");
-      addrStmt.setString(1, customerSet.getString("addressId"));
-      address = addrStmt.executeQuery();
-      
-      if(address.next()){
-        
-        Address custAddr = new Address();
-        custAddr.setAddress(address.getString("address"));
-        custAddr.setAddressId(Integer.parseInt(address.getString("addressId")));
-        custAddr.setPhone(address.getString("phone"));
-
-        cust.setAddress(custAddr);
-        
-        PreparedStatement cityStmt = DBConnection.conn.prepareStatement("SELECT * FROM city where cityId = ?");
-        cityStmt.setString(1, address.getString("cityId"));
-        citySet = cityStmt.executeQuery();
-        
-        if(citySet.first()){
-          City city = new City();
-          city.setCityId(Integer.parseInt(citySet.getString("cityId")));
-          city.setCity(citySet.getString("city"));
-          city.setCountryId(Integer.parseInt(citySet.getString("countryId")));
-          
-          cust.setCity(city);
-          
-          PreparedStatement countryStmt = DBConnection.conn.prepareStatement("Select * from country where countryId = ?");
-          countryStmt.setString(1, citySet.getString("countryId"));
-          countrySet = countryStmt.executeQuery();
-          
-          if(countrySet.first()){
-            Country country = new Country();
-            country.setCountry(countrySet.getString("country"));
-            country.setCountryId(Integer.parseInt(countrySet.getString("countryId")));
-            
-            cust.setCountry(country);
-          }
-          
-        }
-        
-      }
+      cust.setCustomerId(customerSet.getString("customer.customerId"));
+      cust.setCustomerName(customerSet.getString("customer.customerName"));
+      cust.setAddress(custAddr);
+      cust.setCity(custCity);
+      cust.setCountry(custCountry);
       
       customers.add(cust);
+      
     }
     
     custTbl.setItems(customers);
@@ -152,7 +135,8 @@ public class SchedulesController implements Initializable {
     Scene modCustScene = new Scene(modCustParent);
     
     CustController custController = modCustLoader.getController();
-    custController.setCustomer(custTbl.getSelectionModel().getSelectedItem());
+    custController.setCustomer(custTbl.getSelectionModel().getSelectedItem(),
+                               custTbl.getSelectionModel().getSelectedIndex());
     
     Stage stage = new Stage();
 

@@ -5,6 +5,7 @@
  */
 package controller;
 
+import java.io.IOException;
 import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -49,6 +50,10 @@ public class CustController implements Initializable {
   
   private boolean isModifying;
   
+  private Customer modCustomer;
+  
+  private int modCustIndex;
+  
   private String origName, origAddr, origCity, origCountry, origPhone;
           
   @Override
@@ -62,8 +67,11 @@ public class CustController implements Initializable {
     
   }  
   
-  public void setCustomer(Customer customer){
+  public void setCustomer(Customer customer, int index){
     isModifying = true;
+    
+    modCustomer = customer;
+    modCustIndex = index;
     
     origName = customer.getCustomerName();
     origAddr = customer.getAddress().getAddress();
@@ -103,7 +111,7 @@ public class CustController implements Initializable {
   }
   
   @FXML
-  private void saveCust() throws SQLException{
+  private void saveCust() throws SQLException, ClassNotFoundException, IOException{
     
     ResultSet country = null;
     ResultSet city = null;
@@ -123,21 +131,21 @@ public class CustController implements Initializable {
     if(!addPhone.getText().equals(origPhone)) isPhoneModified = true;
     
     if(isValidInput()){
+      
+      DBConnection.connect();
 
       PreparedStatement findCountryStmt = DBConnection.conn.prepareStatement("select * from country where "
               + "country = ?");
       findCountryStmt.setString(1, addCountry.getText().trim());
       country = findCountryStmt.executeQuery();
-      
-      
+
       //If the country doesn't exist, create a new country record
       if(!country.next()){
-     
         PreparedStatement addCountryStmt = DBConnection.conn.prepareStatement("insert into country "
                 + "(country, createDate, createdBy, lastUpdate, lastUpdateBy) "
                 + "values(?, CURRENT_TIMESTAMP,?, CURRENT_TIMESTAMP, ?)");
         
-        addCountryStmt.setString(1,  addCountry.getText());
+        addCountryStmt.setString(1,  addCountry.getText().trim());
         addCountryStmt.setString(2,  LoginController.currentUser.getUsername());
         addCountryStmt.setString(3,  LoginController.currentUser.getUsername());
         addCountryStmt.executeUpdate();
@@ -146,18 +154,15 @@ public class CustController implements Initializable {
               + "country = ?");
         findNewCountryStmt.setString(1, addCountry.getText().trim());
         country = findNewCountryStmt.executeQuery();
-        
+
       }
       
       country.first();
-      
-      Country custCountry = new Country();
-      custCountry.setCountryId(Integer.parseInt(country.getString("countryId")));
-      custCountry.setCountry(country.getString("country"));
 
       PreparedStatement findCityStmt = DBConnection.conn.prepareStatement("select * from city where "
-            + "city = ?");
+            + "city = ? and countryId = ?");
       findCityStmt.setString(1, addCity.getText().trim());
+      findCityStmt.setString(2, country.getString("countryId"));
       city = findCityStmt.executeQuery();
 
       if(!city.next()){
@@ -180,46 +185,89 @@ public class CustController implements Initializable {
       
       city.first();
       
+      if(isModifying){
+        PreparedStatement updateAddrStmt = DBConnection.conn.prepareStatement("update address"
+          + " set address = ?, phone = ?, cityId = ?"
+          + " where addressId = ?");
+        updateAddrStmt.setString(1, addAddress.getText().trim());
+        updateAddrStmt.setString(2, addPhone.getText().trim());
+        updateAddrStmt.setString(3, city.getString("cityId"));
+        updateAddrStmt.setString(4, Integer.toString(modCustomer.getAddress().getAddressId()));
+        updateAddrStmt.executeUpdate();
+        
+        PreparedStatement findAddrStmt = DBConnection.conn.prepareStatement("select * from address where "
+                + "addressId = ?");
+        findAddrStmt.setString(1, Integer.toString(modCustomer.getAddress().getAddressId()));
+        address = findAddrStmt.executeQuery();
+        
+      }else{
+        
+        PreparedStatement addAddrStmt = DBConnection.conn.prepareStatement("insert into address "
+          + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdateBy) "
+          + "values(?, '', ?, 99999,?, CURRENT_TIMESTAMP,?,?)");
+        addAddrStmt.setString(1, addAddress.getText().trim());
+        addAddrStmt.setString(2, city.getString("cityId"));
+        addAddrStmt.setString(3, addPhone.getText().trim());
+        addAddrStmt.setString(4, LoginController.currentUser.getUsername());
+        addAddrStmt.setString(5, LoginController.currentUser.getUsername());
+        addAddrStmt.executeUpdate();
+
+        PreparedStatement findNewAddrStmt = DBConnection.conn.prepareStatement("select * from address where "
+                + "addressId = (select max(addressId) from address)");
+        address = findNewAddrStmt.executeQuery();
+        
+      }
+
+      address.first();
+
+      if(isModifying){
+        
+        PreparedStatement updateCustStmt = DBConnection.conn.prepareStatement("update customer"
+                + " set customerName = ?, addressId = ?, lastUpdateBy = ?"
+                + " where customerId = ?");
+        updateCustStmt.setString(1, addName.getText().trim());
+        updateCustStmt.setString(2, address.getString("addressId"));
+        updateCustStmt.setString(3, LoginController.currentUser.getUsername());
+        updateCustStmt.setString(4, modCustomer.getCustomerId());
+        updateCustStmt.executeUpdate();
+        
+        PreparedStatement findUpdatedCustStmt = DBConnection.conn.prepareStatement("Select * from customer where "
+                + "customerId = ?");
+        findUpdatedCustStmt.setString(1, modCustomer.getCustomerId());
+        customer = findUpdatedCustStmt.executeQuery();
+
+      }else{
+
+        PreparedStatement addCustStmt = DBConnection.conn.prepareStatement("insert into customer "
+          + "(customerName, active, addressId, createDate, createdBy, lastUpdateBy) "
+          + "values(?, 1, ?, CURRENT_TIMESTAMP, ?, ?)");
+        addCustStmt.setString(1, addName.getText().trim());
+        addCustStmt.setString(2, address.getString("addressId"));
+        addCustStmt.setString(3, LoginController.currentUser.getUsername());
+        addCustStmt.setString(4, LoginController.currentUser.getUsername());
+        addCustStmt.executeUpdate();
+
+        PreparedStatement findNewCustStmt = DBConnection.conn.prepareStatement("Select * from customer where "
+                + "customerId = (select max(customerId) from customer)");
+        customer = findNewCustStmt.executeQuery();
+      
+      }
+      
+      customer.first();
+      
+      Country custCountry = new Country();
+      custCountry.setCountryId(Integer.parseInt(country.getString("countryId")));
+      custCountry.setCountry(country.getString("country"));
+      
       City custCity = new City();
       custCity.setCityId(Integer.parseInt(city.getString("cityId")));
       custCity.setCity(city.getString("city"));
       custCity.setCountryId(Integer.parseInt(city.getString("countryId")));
       
-      PreparedStatement addAddrStmt = DBConnection.conn.prepareStatement("insert into address "
-        + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdateBy) "
-        + "values(?, '', ?, 99999,?, CURRENT_TIMESTAMP,?,?)");
-      addAddrStmt.setString(1, addAddress.getText().trim());
-      addAddrStmt.setString(2, city.getString("cityId"));
-      addAddrStmt.setString(3, addPhone.getText().trim());
-      addAddrStmt.setString(4, LoginController.currentUser.getUsername());
-      addAddrStmt.setString(5, LoginController.currentUser.getUsername());
-      addAddrStmt.executeUpdate();
-      
-
-      PreparedStatement findNewAddrStmt = DBConnection.conn.prepareStatement("select * from address where "
-              + "addressId = (select max(addressId) from address)");
-      address = findNewAddrStmt.executeQuery();
-      
-      address.first();
-      
       Address custAddr = new Address();
       custAddr.setAddressId(Integer.parseInt(address.getString("addressId")));
       custAddr.setAddress(address.getString("address"));
       custAddr.setPhone(address.getString("phone"));
-
-      PreparedStatement addCustStmt = DBConnection.conn.prepareStatement("insert into customer "
-        + "(customerName, active, addressId, createDate, createdBy, lastUpdateBy) "
-        + "values(?, 1, ?, CURRENT_TIMESTAMP, ?, ?)");
-      addCustStmt.setString(1, addName.getText());
-      addCustStmt.setString(2, address.getString("addressId"));
-      addCustStmt.setString(3, LoginController.currentUser.getUsername());
-      addCustStmt.setString(4, LoginController.currentUser.getUsername());
-      addCustStmt.executeUpdate();
-
-      PreparedStatement findNewCustStmt = DBConnection.conn.prepareStatement("Select * from customer where "
-              + "customerId = (select max(customerId) from customer)");
-      customer = findNewCustStmt.executeQuery();
-      customer.first();
 
       Customer cust = new Customer();
       cust.setCustomerId(customer.getString("customerId"));
@@ -227,11 +275,15 @@ public class CustController implements Initializable {
       cust.setCity(custCity);
       cust.setCountry(custCountry);
       cust.setAddress(custAddr);
-
-      SchedulesController.customers.add(cust);
+      
+      if(isModifying){
+        SchedulesController.customers.set(modCustIndex, cust);
+      }else{
+        SchedulesController.customers.add(cust);
+      }
 
       DBConnection.disconnect();
-      
+
       Stage stage = (Stage) anchorPane.getScene().getWindow();
       stage.close();
     }
