@@ -8,16 +8,16 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.SchedulesController">
+<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="1043.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.SchedulesController">
    <children>
-      <TableView fx:id="custTbl" layoutX="24.0" layoutY="100.0" prefHeight="200.0" prefWidth="289.0">
+      <TableView fx:id="custTbl" layoutX="24.0" layoutY="66.0" prefHeight="200.0" prefWidth="289.0">
         <columns>
           <TableColumn fx:id="nameCol" prefWidth="90.0" text="Name" />
             <TableColumn fx:id="phoneCol" prefWidth="99.0" text="Phone" />
             <TableColumn fx:id="addressCol" prefWidth="83.0" text="Address" />
         </columns>
       </TableView>
-      <HBox layoutX="29.0" layoutY="312.0" prefHeight="39.0" prefWidth="271.0">
+      <HBox layoutX="33.0" layoutY="275.0" prefHeight="39.0" prefWidth="271.0">
          <children>
             <Button layoutX="90.0" layoutY="309.0" mnemonicParsing="false" onAction="#viewAddCustStage" text="Add">
                <opaqueInsets>
@@ -38,10 +38,46 @@
             <Button layoutX="281.0" layoutY="309.0" mnemonicParsing="false" onAction="#deleteCust" text="Delete" />
          </children>
       </HBox>
-      <Label layoutX="24.0" layoutY="57.0" text="Customers">
+      <Label layoutX="24.0" layoutY="24.0" text="Customers">
          <font>
             <Font size="24.0" />
          </font>
       </Label>
+      <Label layoutX="346.0" layoutY="24.0" text="Appointments">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <TableView fx:id="apptTbl" layoutX="346.0" layoutY="66.0" prefHeight="200.0" prefWidth="670.0">
+        <columns>
+          <TableColumn fx:id="apptCustCol" prefWidth="101.0" text="Customer " />
+          <TableColumn fx:id="apptTitleCol" prefWidth="97.0" text="Title" />
+            <TableColumn fx:id="apptDescCol" prefWidth="96.0" text="Description" />
+            <TableColumn fx:id="apptLocCol" minWidth="0.0" prefWidth="101.0" text="Location" />
+            <TableColumn fx:id="apptStartCol" prefWidth="129.0" text="Start" />
+            <TableColumn fx:id="apptEndCol" prefWidth="129.0" text="End" />
+        </columns>
+      </TableView>
+      <HBox layoutX="745.0" layoutY="275.0" prefHeight="39.0" prefWidth="271.0">
+         <children>
+            <Button layoutX="90.0" layoutY="309.0" mnemonicParsing="false" onAction="#viewAddApptStage" text="Add">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Button>
+            <Button layoutX="185.0" layoutY="309.0" mnemonicParsing="false" onAction="#viewModApptStage" text="Update">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Button>
+            <Button layoutX="281.0" layoutY="309.0" mnemonicParsing="false" onAction="#deleteAppt" text="Delete" />
+         </children>
+      </HBox>
    </children>
 </AnchorPane>

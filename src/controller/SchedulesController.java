@@ -27,15 +27,19 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Address;
+import model.Appointment;
 import model.City;
 import model.Country;
 import model.Customer;
 import util.DBConnection;
 
-public class SchedulesController implements Initializable {
+public class SchedulesController extends Thread implements Initializable{
   
   @FXML
   private TableView<Customer> custTbl;
+  
+  @FXML
+  private TableView<Appointment> apptTbl;
   
   @FXML
   private TableColumn<Customer, String> nameCol;
@@ -46,9 +50,14 @@ public class SchedulesController implements Initializable {
   @FXML
   private TableColumn<Customer, String> addressCol;
   
+  @FXML
+  private TableColumn<Appointment, String> apptCustCol,
+            apptTitleCol, apptLocCol, apptDescCol, apptStartCol, apptEndCol;
+  
   private ResourceBundle rb;
   
   public static ObservableList<Customer> customers = FXCollections.observableArrayList();
+  public static ObservableList<Appointment> appointments = FXCollections.observableArrayList();
   
   @Override
   public void initialize(URL url, ResourceBundle rb) {
@@ -61,22 +70,32 @@ public class SchedulesController implements Initializable {
     addressCol.setCellValueFactory(cellData -> 
         new SimpleStringProperty(cellData.getValue().getAddress().getAddress()));
     
+    apptCustCol.setCellValueFactory(cellData -> 
+        new SimpleStringProperty(cellData.getValue().getCustomer().getCustomerName()));
+    apptTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
+    apptDescCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+    apptLocCol.setCellValueFactory(new PropertyValueFactory<>("location"));
+    apptStartCol.setCellValueFactory(new PropertyValueFactory<>("start"));
+    apptEndCol.setCellValueFactory(new PropertyValueFactory<>("end"));
+    
   } 
   
   public void getAllCustomers() throws SQLException{
     
     PreparedStatement stmt = DBConnection.conn.prepareStatement(
-      "SELECT customer.customerId, customer.customerName, " +
+      "select customer.customerId, customer.customerName, " +
         "address.addressId, address.address, " +
         "address.postalCode, address.phone, " +
-        "city.cityId, city.city, city.countryId, country.countryId, country.country " +
-      "FROM customer, address, city, country " +
-      "WHERE customer.addressId = address.addressId " +
-      "AND address.cityId = city.cityId " +
-      "AND city.countryId = country.countryId " +
-      "ORDER BY customer.customerId;");
+        "city.cityId, city.city, city.countryId, " +
+        "country.countryId, country.country " +
+      "from customer, address, city, country " +
+      "where customer.addressId = address.addressId " +
+      "and address.cityId = city.cityId " +
+      "and city.countryId = country.countryId ");
     
     ResultSet customerSet = stmt.executeQuery();
+    
+    
     
     while(customerSet.next()){
       
@@ -107,6 +126,40 @@ public class SchedulesController implements Initializable {
     
     custTbl.setItems(customers);
     custTbl.getSelectionModel().selectFirst();
+    
+  }
+  
+  public void getAllAppts() throws SQLException{
+    
+    PreparedStatement stmt = DBConnection.conn.prepareStatement(
+      "select customer.customerName, customer.customerId, appointment.appointmentId, " +
+      "appointment.title, appointment.description, appointment.location, " +
+      "appointment.start, appointment.end, appointment.userId " +
+      "from appointment, customer where customer.customerId = appointment.customerId");
+    
+    ResultSet appointmentSet = stmt.executeQuery();
+    
+    while (appointmentSet.next()){
+      
+      Appointment appointment = new Appointment();
+      
+      for(Customer cust : customers){
+        if (cust.getCustomerId().equals(appointmentSet.getString("customer.customerId"))){
+          appointment.setCustomer(cust);
+        }
+      }
+      
+      appointment.setTitle(appointmentSet.getString("appointment.title"));
+      appointment.setDescription(appointmentSet.getString("appointment.description"));
+      appointment.setLocation(appointmentSet.getString("appointment.location"));
+      appointment.setStart(appointmentSet.getString("appointment.start"));
+      appointment.setEnd(appointmentSet.getString("appointment.end"));
+
+      appointments.add(appointment);
+    }
+    
+    apptTbl.setItems(appointments);
+    apptTbl.getSelectionModel().selectFirst();
     
   }
   
@@ -187,4 +240,43 @@ public class SchedulesController implements Initializable {
     
   }
 
+  @FXML
+  private void viewAddApptStage() throws IOException{
+    
+    FXMLLoader apptLoader = new FXMLLoader(getClass().getResource("/view/Appointments.fxml"));
+    apptLoader.setResources(rb);
+    Parent apptParent = (Parent) apptLoader.load();
+    Scene apptScene = new Scene(apptParent);
+
+    Stage stage = new Stage();
+
+    stage.initModality(Modality.APPLICATION_MODAL);
+    stage.setScene(apptScene);
+    stage.setTitle("Add Appointment");
+    stage.show();
+    
+  }
+  
+  @FXML
+  private void viewModApptStage() throws IOException{
+    
+    FXMLLoader apptLoader = new FXMLLoader(getClass().getResource("/view/Appointments.fxml"));
+    apptLoader.setResources(rb);
+    Parent apptParent = (Parent) apptLoader.load();
+    Scene apptScene = new Scene(apptParent);
+
+    Stage stage = new Stage();
+
+    stage.initModality(Modality.APPLICATION_MODAL);
+    stage.setScene(apptScene);
+    stage.setTitle("Modify Appointment");
+    stage.show();
+    
+  }
+  
+  @FXML
+  private void deleteAppt(){
+    
+  }
+  
 }

@@ -71,6 +71,7 @@ public class LoginController implements Initializable {
       if (rs.next()) {
         User user = new User();
         user.setUsername(usernameField.getText());
+        user.setUserID(Integer.parseInt(rs.getString("userId")));
         currentUser = user;
         Stage stage = (Stage) anchorPane.getScene().getWindow();
         stage.close();
@@ -108,6 +109,7 @@ public class LoginController implements Initializable {
     
     SchedulesController schedController = scheduleLoader.getController();
     schedController.getAllCustomers();
+    schedController.getAllAppts();
     
     Scene addPartScene = new Scene(addPartParent);
 

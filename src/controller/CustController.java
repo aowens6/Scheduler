@@ -118,18 +118,6 @@ public class CustController implements Initializable {
     ResultSet address = null;
     ResultSet customer = null;
     
-    boolean isNameModified = false;
-    boolean isAddrModified = false;
-    boolean isCityModified = false;
-    boolean isCountryModified = false;
-    boolean isPhoneModified = false;
-    
-    if(!addName.getText().equals(origName)) isNameModified = true;
-    if(!addAddress.getText().equals(origName)) isAddrModified = true;
-    if(!addCity.getText().equals(origName)) isCityModified = true;
-    if(!addCountry.getText().equals(origCountry)) isCountryModified = true;
-    if(!addPhone.getText().equals(origPhone)) isPhoneModified = true;
-    
     if(isValidInput()){
       
       DBConnection.connect();
@@ -172,8 +160,8 @@ public class CustController implements Initializable {
                 + "values(?, ?, CURRENT_TIMESTAMP, ?, ?)");
         addCityStmt.setString(1, addCity.getText().trim());
         addCityStmt.setString(2, country.getString("countryId"));
-        addCityStmt.setString(3,  LoginController.currentUser.getUsername());
-        addCityStmt.setString(4,  LoginController.currentUser.getUsername());
+        addCityStmt.setString(3, LoginController.currentUser.getUsername());
+        addCityStmt.setString(4, LoginController.currentUser.getUsername());
         addCityStmt.executeUpdate();
 
         PreparedStatement findNewCityStmt = DBConnection.conn.prepareStatement("select * from city where "
@@ -289,33 +277,6 @@ public class CustController implements Initializable {
     }
     
   }
-  
-
-  @FXML
-  public void saveCust1() throws SQLException{
-    
-    ResultSet country = null;
-    ResultSet city = null;
-    ResultSet address = null;
-    ResultSet customer = null;
-    
-    boolean isNameModified = false;
-    boolean isAddrModified = false;
-    boolean isCityModified = false;
-    boolean isCountryModified = false;
-    boolean isPhoneModified = false;
-    
-    if(!addName.getText().equals(origName)) isNameModified = true;
-    if(!addAddress.getText().equals(origName)) isAddrModified = true;
-    if(!addCity.getText().equals(origName)) isCityModified = true;
-    if(!addCountry.getText().equals(origCountry)) isCountryModified = true;
-    if(!addPhone.getText().equals(origPhone)) isPhoneModified = true;
-    
-    if(isValidInput()){
-      
-    }
-  }
-  
   
   @FXML
   public void cancel(Event e) {

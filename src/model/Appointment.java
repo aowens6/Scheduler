@@ -15,6 +15,7 @@ public class Appointment {
   private Customer customer;
   private String title;
   private String description;
+  private String location;
   private String start;
   private String end;
   private int userID;
@@ -84,11 +85,19 @@ public class Appointment {
     this.end = end;
   }
 
-  public int getUser() {
+  public String getLocation() {
+    return location;
+  }
+
+  public void setLocation(String location) {
+    this.location = location;
+  }
+
+  public int getUserID() {
     return userID;
   }
 
-  public void setUser(int userID) {
+  public void setUserID(int userID) {
     this.userID = userID;
   }
  
