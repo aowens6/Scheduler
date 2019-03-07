@@ -1,11 +1,117 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
 <?import java.lang.*?>
 <?import java.util.*?>
 <?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ApptController">
-    
+<AnchorPane id="AnchorPane" fx:id="anchorPane" prefHeight="648.0" prefWidth="491.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ApptController">
+   <children>
+      <HBox layoutX="37.0" layoutY="169.0" prefHeight="39.0" prefWidth="310.0">
+         <children>
+            <Label alignment="CENTER_RIGHT" layoutX="37.0" layoutY="57.0" prefHeight="35.0" prefWidth="131.0" text="Title">
+               <font>
+                  <Font size="24.0" />
+               </font>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <ComboBox fx:id="titleCbx" layoutX="185.0" layoutY="55.0" prefWidth="150.0" />
+         </children>
+      </HBox>
+      <HBox layoutX="37.0" layoutY="237.0" prefHeight="39.0" prefWidth="310.0">
+         <children>
+            <Label layoutX="37.0" layoutY="147.0" prefHeight="35.0" prefWidth="131.0" text="Description">
+               <font>
+                  <Font size="24.0" />
+               </font>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <ComboBox fx:id="descCbx" layoutX="185.0" layoutY="145.0" prefWidth="150.0" />
+         </children>
+      </HBox>
+      <HBox layoutX="37.0" layoutY="311.0" prefHeight="39.0" prefWidth="310.0">
+         <children>
+            <Label alignment="CENTER_RIGHT" layoutX="37.0" layoutY="222.0" prefWidth="131.0" text="Location">
+               <font>
+                  <Font size="24.0" />
+               </font>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <ComboBox fx:id="locCbx" layoutX="192.0" layoutY="220.0" prefWidth="150.0" />
+         </children>
+      </HBox>
+      <HBox layoutX="37.0" layoutY="444.0" prefHeight="39.0" prefWidth="310.0">
+         <children>
+            <Label alignment="CENTER_RIGHT" layoutX="37.0" layoutY="312.0" prefWidth="131.0" text="Start ">
+               <font>
+                  <Font size="24.0" />
+               </font>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <ComboBox fx:id="startCbx" layoutX="192.0" layoutY="312.0" prefWidth="150.0" />
+         </children>
+      </HBox>
+      <HBox layoutX="37.0" layoutY="521.0" prefHeight="39.0" prefWidth="310.0">
+         <children>
+            <Label alignment="CENTER_RIGHT" layoutX="37.0" layoutY="405.0" prefWidth="131.0" text="End">
+               <font>
+                  <Font size="24.0" />
+               </font>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <ComboBox fx:id="endCbx" layoutX="192.0" layoutY="403.0" prefWidth="150.0">
+               <HBox.margin>
+                  <Insets />
+               </HBox.margin>
+            </ComboBox>
+         </children>
+      </HBox>
+      <Button fx:id="saveBtn" layoutX="125.0" layoutY="583.0" mnemonicParsing="false" onAction="#saveNewAppt" text="Save">
+         <font>
+            <Font size="24.0" />
+         </font></Button>
+      <Button layoutX="225.0" layoutY="583.0" mnemonicParsing="false" text="Cancel">
+         <font>
+            <Font size="24.0" />
+         </font></Button>
+      <HBox layoutX="37.0" layoutY="376.0" prefHeight="39.0" prefWidth="397.0">
+         <children>
+            <Label alignment="CENTER_RIGHT" layoutX="37.0" layoutY="222.0" prefWidth="131.0" text="Date">
+               <font>
+                  <Font size="24.0" />
+               </font>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <DatePicker fx:id="datePicker" />
+         </children>
+      </HBox>
+      <HBox layoutX="37.0" layoutY="99.0" prefHeight="39.0" prefWidth="397.0">
+         <children>
+            <Label alignment="CENTER_RIGHT" layoutX="37.0" layoutY="57.0" prefHeight="35.0" prefWidth="131.0" text="Customer">
+               <font>
+                  <Font size="24.0" />
+               </font>
+               <HBox.margin>
+                  <Insets right="10.0" />
+               </HBox.margin>
+            </Label>
+            <TextField fx:id="custTxt" disable="true" editable="false" />
+         </children>
+      </HBox>
+   </children>
 </AnchorPane>

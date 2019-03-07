@@ -10,7 +10,13 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ResourceBundle;
+import java.util.TimeZone;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -36,7 +42,7 @@ import util.DBConnection;
 public class SchedulesController extends Thread implements Initializable{
   
   @FXML
-  private TableView<Customer> custTbl;
+  public TableView<Customer> custTbl;
   
   @FXML
   private TableView<Appointment> apptTbl;
@@ -59,8 +65,13 @@ public class SchedulesController extends Thread implements Initializable{
   public static ObservableList<Customer> customers = FXCollections.observableArrayList();
   public static ObservableList<Appointment> appointments = FXCollections.observableArrayList();
   
+  private final DateTimeFormatter dtFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
+  private final ZoneId localZoneId = ZoneId.systemDefault();
+  
   @Override
   public void initialize(URL url, ResourceBundle rb) {
+    
+//    TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     
     this.rb = rb;
     
@@ -149,11 +160,22 @@ public class SchedulesController extends Thread implements Initializable{
         }
       }
       
+      appointment.setAppointmentId(appointmentSet.getString("appointment.appointmentId"));
       appointment.setTitle(appointmentSet.getString("appointment.title"));
       appointment.setDescription(appointmentSet.getString("appointment.description"));
       appointment.setLocation(appointmentSet.getString("appointment.location"));
-      appointment.setStart(appointmentSet.getString("appointment.start"));
-      appointment.setEnd(appointmentSet.getString("appointment.end"));
+      
+      
+      Timestamp startTime = appointmentSet.getTimestamp("appointment.start");
+      ZonedDateTime startZDT = startTime.toLocalDateTime().atZone(ZoneId.of("UTC"));
+      ZonedDateTime localStart = startZDT.withZoneSameInstant(localZoneId);
+      
+      Timestamp endTime = appointmentSet.getTimestamp("appointment.end");
+      ZonedDateTime endZDT = endTime.toLocalDateTime().atZone(ZoneId.of("UTC"));
+      ZonedDateTime localEnd = endZDT.withZoneSameInstant(localZoneId);
+
+      appointment.setStart(localStart.format(dtFormat));
+      appointment.setEnd(localEnd.format(dtFormat));
 
       appointments.add(appointment);
     }
@@ -204,6 +226,7 @@ public class SchedulesController extends Thread implements Initializable{
   public void deleteCust() throws SQLException, ClassNotFoundException, IOException {
     
     Customer currentCust = custTbl.getSelectionModel().getSelectedItem();
+    ObservableList<Appointment> removeAppts = FXCollections.observableArrayList();
     
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION); 
     alert.initModality(Modality.APPLICATION_MODAL);
@@ -215,10 +238,10 @@ public class SchedulesController extends Thread implements Initializable{
       
       DBConnection.connect();
       
-      
-      ////DELETE APPOINTMENT BASED ON CUST ID
-      
-      
+      PreparedStatement deleteApptStmt = DBConnection.conn.prepareStatement("delete from appointment "
+              + "where customerId = ?");
+      deleteApptStmt.setString(1, currentCust.getCustomerId());
+      deleteApptStmt.executeUpdate();
       
       PreparedStatement deleteCustStmt = DBConnection.conn.prepareStatement("delete from customer "
               + "where customerId = ?");
@@ -234,6 +257,15 @@ public class SchedulesController extends Thread implements Initializable{
       
       customers.remove(currentCust);
       
+      
+      for(Appointment appt : appointments){
+        if(appt.getCustomer().getCustomerId().equals(currentCust.getCustomerId())){
+          removeAppts.add(appt);
+        }
+      }
+      
+      appointments.removeAll(removeAppts);
+      
     }else{
       alert.close();
     }
@@ -247,6 +279,9 @@ public class SchedulesController extends Thread implements Initializable{
     apptLoader.setResources(rb);
     Parent apptParent = (Parent) apptLoader.load();
     Scene apptScene = new Scene(apptParent);
+    
+    ApptController apptController = apptLoader.getController();
+    apptController.setCustomer(custTbl.getSelectionModel().getSelectedItem());
 
     Stage stage = new Stage();
 
@@ -264,7 +299,11 @@ public class SchedulesController extends Thread implements Initializable{
     apptLoader.setResources(rb);
     Parent apptParent = (Parent) apptLoader.load();
     Scene apptScene = new Scene(apptParent);
-
+    
+    ApptController apptController = apptLoader.getController();
+    apptController.setAppt(apptTbl.getSelectionModel().getSelectedItem(),
+                           apptTbl.getSelectionModel().getSelectedIndex());
+    
     Stage stage = new Stage();
 
     stage.initModality(Modality.APPLICATION_MODAL);
@@ -275,8 +314,33 @@ public class SchedulesController extends Thread implements Initializable{
   }
   
   @FXML
-  private void deleteAppt(){
+  private void deleteAppt() throws SQLException, ClassNotFoundException, IOException{
     
+    Appointment currAppt = apptTbl.getSelectionModel().getSelectedItem();
+    
+    Alert alert = new Alert(Alert.AlertType.CONFIRMATION); 
+    alert.initModality(Modality.APPLICATION_MODAL);
+    alert.setTitle("Confirm Delete");
+    alert.setContentText("Are you sure you want to delete this appointment?");
+    alert.showAndWait();
+
+    if(alert.getResult() == ButtonType.OK){
+      
+      DBConnection.connect();
+
+      PreparedStatement deleteCustStmt = DBConnection.conn.prepareStatement("delete from appointment "
+              + "where appointmentId = ?");
+      deleteCustStmt.setString(1, currAppt.getAppointmentId());
+      deleteCustStmt.executeUpdate();
+      
+      
+      DBConnection.disconnect();
+      
+      appointments.remove(currAppt);
+      
+    }else{
+      alert.close();
+    }
   }
   
 }
