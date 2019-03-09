@@ -296,12 +296,15 @@ public class SchedulesController extends Thread implements Initializable{
 
   @FXML
   private void viewAddCustStage() throws IOException{
-    FXMLLoader addCustLoader = new FXMLLoader(getClass().getResource("/view/AddCust.fxml"));
+    FXMLLoader addCustLoader = new FXMLLoader(getClass().getResource("/view/Customers.fxml"));
     addCustLoader.setResources(rb);
     Parent addCustParent = (Parent) addCustLoader.load();
     Scene addCustScene = new Scene(addCustParent);
 
     Stage stage = new Stage();
+    
+    CustController custController = addCustLoader.getController();
+    stage.setOnCloseRequest(event -> custController.cancel(event));
 
     stage.initModality(Modality.APPLICATION_MODAL);
     stage.setScene(addCustScene);
@@ -313,16 +316,17 @@ public class SchedulesController extends Thread implements Initializable{
   @FXML
   private void viewModCustStage() throws IOException{
     
-    FXMLLoader modCustLoader = new FXMLLoader(getClass().getResource("/view/AddCust.fxml"));
+    FXMLLoader modCustLoader = new FXMLLoader(getClass().getResource("/view/Customers.fxml"));
     modCustLoader.setResources(rb);
     Parent modCustParent = (Parent) modCustLoader.load();
     Scene modCustScene = new Scene(modCustParent);
+
+    Stage stage = new Stage();
     
     CustController custController = modCustLoader.getController();
     custController.setCustomer(custTbl.getSelectionModel().getSelectedItem(),
                                custTbl.getSelectionModel().getSelectedIndex());
-    
-    Stage stage = new Stage();
+    stage.setOnCloseRequest(event -> custController.cancel(event));
 
     stage.initModality(Modality.APPLICATION_MODAL);
     stage.setScene(modCustScene);
@@ -393,6 +397,9 @@ public class SchedulesController extends Thread implements Initializable{
     apptController.setCustomer(custTbl.getSelectionModel().getSelectedItem());
 
     Stage stage = new Stage();
+    
+    ApptController addController = apptLoader.getController();
+    stage.setOnCloseRequest(event -> addController.cancel(event));
 
     stage.initModality(Modality.APPLICATION_MODAL);
     stage.setScene(apptScene);
@@ -414,6 +421,9 @@ public class SchedulesController extends Thread implements Initializable{
                            apptTbl.getSelectionModel().getSelectedIndex());
     
     Stage stage = new Stage();
+    
+    ApptController modController = apptLoader.getController();
+    stage.setOnCloseRequest(event -> modController.cancel(event));
 
     stage.initModality(Modality.APPLICATION_MODAL);
     stage.setScene(apptScene);

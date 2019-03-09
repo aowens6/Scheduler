@@ -19,10 +19,12 @@ import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
@@ -195,9 +197,8 @@ public class ApptController implements Initializable {
 
       appointment.setStart(localStart.format(dtFormat));
       appointment.setEnd(localEnd.format(dtFormat));
-      
 
-      if(isValidData(appointment)) appointments.add(appointment);
+      appointments.add(appointment);
       
       DBConnection.disconnect();
       
@@ -276,7 +277,7 @@ public class ApptController implements Initializable {
       appt.setStart(localStart.format(dtFormat));
       appt.setEnd(localEnd.format(dtFormat));
       
-      if (isValidData(appt)) appointments.set(index, appt);
+      appointments.set(index, appt);
       
       DBConnection.disconnect();
       
@@ -286,31 +287,51 @@ public class ApptController implements Initializable {
     }
   }
   
-  private boolean isValidData(Appointment newAppt){
-    boolean validData = true;
-    
-    LocalDateTime newStart = LocalDateTime.parse(newAppt.getStart(), dtFormat);
-    LocalDateTime newEnd = LocalDateTime.parse(newAppt.getEnd(), dtFormat);
-    
-    for(Appointment appt : appointments){
+//  
+//  private boolean isValidData(Appointment newAppt){
+//    boolean validData = true;
+//    
+//    LocalDateTime newStart = LocalDateTime.parse(newAppt.getStart(), dtFormat);
+//    LocalDateTime newEnd = LocalDateTime.parse(newAppt.getEnd(), dtFormat);
+//    
+//    for(Appointment appt : appointments){
+//      
+//      LocalDateTime existingStart = LocalDateTime.parse(appt.getStart(), dtFormat);
+//      LocalDateTime existingEnd = LocalDateTime.parse(appt.getEnd(), dtFormat);
+//
+//      if(newStart.equals(existingStart) || newEnd.equals(existingEnd)){
+//        
+//        validData = false;
+//        
+//        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+//        alert.initModality(Modality.APPLICATION_MODAL);
+//        alert.setTitle("Approaching Appointment");
+//        alert.setContentText("This time is already assigned");
+//        alert.showAndWait();
+//        
+//      }
+//    }
+//    
+//    return validData;
+//  }
+  
+  @FXML
+  public void cancel(Event e) {
       
-      LocalDateTime existingStart = LocalDateTime.parse(appt.getStart(), dtFormat);
-      LocalDateTime existingEnd = LocalDateTime.parse(appt.getEnd(), dtFormat);
+    e.consume();
 
-      if(newStart.equals(existingStart) || newEnd.equals(existingEnd)){
-        
-        validData = false;
-        
-        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
-        alert.initModality(Modality.APPLICATION_MODAL);
-        alert.setTitle("Approaching Appointment");
-        alert.setContentText("This time is already assigned");
-        alert.showAndWait();
-        
-      }
+    Alert alert = new Alert(Alert.AlertType.CONFIRMATION); 
+    alert.initModality(Modality.APPLICATION_MODAL);
+    alert.setTitle("Confirm Cancel");
+    alert.setContentText("Are you sure you want to leave without saving?");
+    alert.showAndWait();
+
+    if(alert.getResult() == ButtonType.OK){
+      Stage stage = (Stage) anchorPane.getScene().getWindow();
+      stage.close();
+    }else{
+      alert.close();
     }
-    
-    return validData;
   }
 
 }
