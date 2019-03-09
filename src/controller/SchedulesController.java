@@ -11,24 +11,43 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ResourceBundle;
-import java.util.TimeZone;
+import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.PieChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -60,16 +79,73 @@ public class SchedulesController extends Thread implements Initializable{
   private TableColumn<Appointment, String> apptCustCol,
             apptTitleCol, apptLocCol, apptDescCol, apptStartCol, apptEndCol;
   
+  @FXML
+  private ToggleGroup filterTG;
+  
+  @FXML
+  private RadioButton monthRb, weekRb, allRb, checkedBtn;
+  
   private ResourceBundle rb;
   
   public static ObservableList<Customer> customers = FXCollections.observableArrayList();
   public static ObservableList<Appointment> appointments = FXCollections.observableArrayList();
+  public static FilteredList<Appointment> filteredAppts;
+
   
   private final DateTimeFormatter dtFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
   private final ZoneId localZoneId = ZoneId.systemDefault();
+  private LocalDate sunday;
   
   @Override
   public void initialize(URL url, ResourceBundle rb) {
+    
+    getLastWeekDay();
+    
+    try{
+      getAllCustomers();
+      getAllAppts();
+    }catch (SQLException e){
+      e.printStackTrace();
+    }
+    
+    
+    filteredAppts = new FilteredList<>(appointments, p -> true);
+    
+    filterTG.selectedToggleProperty().addListener( new ChangeListener<Toggle>() {
+      public void changed(ObservableValue<? extends Toggle> ov,
+          Toggle oldToggle, Toggle newToggle) {
+        
+        checkedBtn = (RadioButton) newToggle.getToggleGroup().getSelectedToggle(); 
+
+        filteredAppts.setPredicate(appt -> {
+          if(checkedBtn.equals(allRb)){
+            return true;
+          } else if (checkedBtn.equals(monthRb) && LocalDate.parse(appt.getStart(), dtFormat)
+                                                .isAfter(LocalDate.now().withDayOfMonth(1)) &&
+                                        LocalDate.parse(appt.getStart(), dtFormat)
+                                                .isBefore(LocalDate.now().withDayOfMonth(31))){
+            
+            return true;
+          } else if(checkedBtn.equals(weekRb) && LocalDate.parse(appt.getStart(), dtFormat)
+                                                .isAfter(LocalDate.now()) &&
+                                        LocalDate.parse(appt.getStart(), dtFormat)
+                                                .isBefore(sunday)){
+            return true;
+          }
+
+          return false;
+        });
+
+      }
+      
+       
+    });
+    
+    SortedList<Appointment> sortedAppts = new SortedList<>(filteredAppts);
+
+    sortedAppts.comparatorProperty().bind(apptTbl.comparatorProperty());
+
+    apptTbl.setItems(sortedAppts);
     
 //    TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     
@@ -89,7 +165,39 @@ public class SchedulesController extends Thread implements Initializable{
     apptStartCol.setCellValueFactory(new PropertyValueFactory<>("start"));
     apptEndCol.setCellValueFactory(new PropertyValueFactory<>("end"));
     
+    apptWarning();
+    
   } 
+
+  public void apptWarning(){
+    
+    LocalDateTime now = LocalDateTime.now(localZoneId);
+    LocalDateTime later = LocalDateTime.now(localZoneId).plusMinutes(15);
+    
+    for(Appointment appt : appointments){
+      if(LocalDateTime.parse(appt.getStart(), dtFormat).isAfter(now) &&
+              LocalDateTime.parse(appt.getStart(), dtFormat).isBefore(later)){
+        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+        alert.initModality(Modality.APPLICATION_MODAL);
+        alert.setTitle("Approaching Appointment");
+        alert.setContentText("An appointment for " + appt.getCustomer().getCustomerName() + " will happen in 15 minutes");
+        alert.showAndWait();
+        return;
+      }
+    }
+
+  }
+  
+  public void getLastWeekDay(){
+    LocalDate today = LocalDate.now();
+
+    // Go forward to get Sunday
+    sunday = today;
+    while (sunday.getDayOfWeek() != DayOfWeek.SUNDAY) {
+      sunday = sunday.plusDays(1);
+    }
+
+  }
   
   public void getAllCustomers() throws SQLException{
     
@@ -176,6 +284,7 @@ public class SchedulesController extends Thread implements Initializable{
 
       appointment.setStart(localStart.format(dtFormat));
       appointment.setEnd(localEnd.format(dtFormat));
+      appointment.setUserID(appointmentSet.getInt("appointment.userId"));
 
       appointments.add(appointment);
     }
@@ -184,7 +293,7 @@ public class SchedulesController extends Thread implements Initializable{
     apptTbl.getSelectionModel().selectFirst();
     
   }
-  
+
   @FXML
   private void viewAddCustStage() throws IOException{
     FXMLLoader addCustLoader = new FXMLLoader(getClass().getResource("/view/AddCust.fxml"));
@@ -341,6 +450,145 @@ public class SchedulesController extends Thread implements Initializable{
     }else{
       alert.close();
     }
+  }
+  
+  @FXML
+  private void viewApptByType() throws SQLException{
+    
+    PreparedStatement stmt = DBConnection.conn.prepareStatement(
+      "select month(start), count(*), description " +
+      "from appointment " +
+      "group by month(start), description");
+    
+    ResultSet rs = stmt.executeQuery();
+
+    Stage stage = new Stage();
+
+    stage.setTitle("Appointments by Type and Month");
+    final CategoryAxis xAxis = new CategoryAxis();
+    final NumberAxis yAxis = new NumberAxis();
+    final BarChart<String,Number> bc = 
+        new BarChart<String,Number>(xAxis,yAxis);
+    bc.setTitle("Appointment Summary");
+    xAxis.setLabel("Month");       
+    yAxis.setLabel("Total");
+
+    XYChart.Series series1 = new XYChart.Series();
+    series1.setName("First Meeting");          
+
+    XYChart.Series series2 = new XYChart.Series();
+    series2.setName("First Consultation");  
+
+    XYChart.Series series3 = new XYChart.Series();
+    series3.setName("Follow-up");
+
+    while(rs.next()){
+      
+      if(rs.getString("description").trim().equalsIgnoreCase("first meeting")){
+        
+        series1.getData().add(new XYChart.Data(
+                Month.of(rs.getInt("month(start)")).toString(), 
+                rs.getInt("count(*)")));
+        
+      } else if(rs.getString("description").trim().equalsIgnoreCase("first consultation")){
+        
+        series2.getData().add(new XYChart.Data(
+                Month.of(rs.getInt("month(start)")).toString(), 
+                rs.getInt("count(*)")));
+        
+      }else if(rs.getString("description").trim().equalsIgnoreCase("follow-up")){
+        
+        series3.getData().add(new XYChart.Data(
+                Month.of(rs.getInt("month(start)")).toString(), 
+                rs.getInt("count(*)")));
+      }
+      
+    }
+    
+    Scene scene  = new Scene(bc,800,600);
+    bc.getData().addAll(series1, series2, series3);
+    stage.setScene(scene);
+    stage.show();
+    
+  }
+  
+  @FXML
+  private void viewConsultSchedules() throws IOException{
+    FXMLLoader consultLoader = new FXMLLoader(getClass().getResource("/view/Consultants.fxml"));
+    consultLoader.setResources(rb);
+    Parent consultParent = (Parent) consultLoader.load();
+    Scene consultScene = new Scene(consultParent);
+    
+    Stage stage = new Stage();
+
+    stage.initModality(Modality.APPLICATION_MODAL);
+    stage.setScene(consultScene);
+    stage.setTitle("Modify Appointment");
+    stage.show();
+  }
+  
+  @FXML
+  private void viewApptByCountry() throws SQLException {
+    
+    PreparedStatement stmt = DBConnection.conn.prepareStatement(
+      "select country.country, count(appointmentId) " +
+      "from country, appointment, customer, address, city " +
+      "where appointment.customerId = customer.customerId " +
+        "and customer.addressId = address.addressId " +
+        "and address.cityId = city.cityId " +
+        "and city.countryId = country.countryId " +
+      "group by country");
+    
+    ResultSet rs = stmt.executeQuery();
+
+    ObservableList<PieChart.Data> pieChartData =
+            FXCollections.observableArrayList();
+    
+    while(rs.next()){
+      PieChart.Data piece = new PieChart.Data(rs.getString("country"), rs.getInt("count(appointmentId)"));
+      pieChartData.add(piece);
+    }
+    
+    pieChartData.forEach(data ->
+      data.nameProperty().bind(
+        Bindings.concat(
+                data.getName(), " ", data.pieValueProperty().intValue()
+        )
+      )
+    );
+    
+    final PieChart chart = new PieChart(pieChartData);
+    chart.setTitle("Appointments by Customer Country");
+    
+    Stage stage = new Stage();
+    Scene scene = new Scene(new Group());
+
+    ((Group) scene.getRoot()).getChildren().add(chart);
+    stage.setScene(scene);
+    stage.setTitle("Appointments by Customer Country");
+    stage.setWidth(500);
+    stage.setHeight(500);
+    stage.show();
+    
+  }
+  
+  @FXML
+  public void exitProgram(Event e){
+    
+    e.consume();
+    
+    Alert alert = new Alert(Alert.AlertType.CONFIRMATION); 
+    alert.initModality(Modality.APPLICATION_MODAL);
+    alert.setTitle("Confirm exit");
+    alert.setContentText("Are you sure you want to exit?");
+    alert.showAndWait();
+    
+    if(alert.getResult() == ButtonType.OK){
+      Platform.exit();
+    }else{
+      alert.close();
+    }
+    
   }
   
 }

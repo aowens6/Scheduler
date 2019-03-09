@@ -6,17 +6,16 @@
 package controller;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import util.DBConnection;
-import util.Logging;
 
 /**
  *
@@ -39,13 +38,19 @@ public class Main extends Application {
   }
 
   public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
-
+    
+    Path currentRelativePath = Paths.get("/util");
+   
+    String s = currentRelativePath.relativize(currentRelativePath).toString();
+//    String s = currentRelativePath.toAbsolutePath().relativize(currentRelativePath).toString();
+    System.out.println("Current relative path is: " + s);
+    
     DBConnection.connect();
 //    Logging.init();
 //    Logging.logger.info("msg from MAIN");
     launch(args);
     DBConnection.disconnect();
-    
+
   }
   
 }

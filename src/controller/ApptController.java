@@ -21,11 +21,13 @@ import java.util.List;
 import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Appointment;
 import model.Customer;
@@ -51,8 +53,6 @@ public class ApptController implements Initializable {
   private Customer customer;
   private Appointment appt;
   private int index;
-
-//  private final DateTimeFormatter dtFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
   
   private final DateTimeFormatter dtFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
   private final ZoneId localZoneId = ZoneId.systemDefault();
@@ -95,8 +95,7 @@ public class ApptController implements Initializable {
     datePicker.setValue(tomorrow);
     startCbx.getSelectionModel().selectFirst();
     endCbx.getSelectionModel().selectFirst();
-    
-    
+
   }
   
   public void setCustomer(Customer customer){
@@ -109,11 +108,7 @@ public class ApptController implements Initializable {
     saveBtn.setOnAction(e ->  {
       try{
         saveModAppt();
-      }catch(SQLException ex){
-        ex.printStackTrace();
-      }catch(ClassNotFoundException ex){
-        ex.printStackTrace();
-      }catch(IOException ex){
+      }catch(SQLException | ClassNotFoundException | IOException ex){
         ex.printStackTrace();
       }
     });
@@ -122,8 +117,6 @@ public class ApptController implements Initializable {
     this.index = index;
     
     custTxt.setText(appt.getCustomer().getCustomerName());
-    
-    System.out.println(LocalDateTime.parse(appt.getStart(), dtFormat));
 
     startCbx.getItems().add(0, LocalTime.parse(appt.getStart(), dtFormat));
     endCbx.getItems().add(0, LocalTime.parse(appt.getEnd(), dtFormat));
@@ -204,7 +197,7 @@ public class ApptController implements Initializable {
       appointment.setEnd(localEnd.format(dtFormat));
       
 
-      appointments.add(appointment);
+      if(isValidData(appointment)) appointments.add(appointment);
       
       DBConnection.disconnect();
       
@@ -223,25 +216,25 @@ public class ApptController implements Initializable {
     DBConnection.connect();
     
     //processing start time for timezones in database
-//    LocalDate localDate = datePicker.getValue();
-//    LocalTime startTime = LocalTime.parse(
-//            startCbx.getSelectionModel().getSelectedItem().toString());
-//    LocalDateTime startDT = LocalDateTime.of(localDate, startTime);
-//    ZonedDateTime startZDT = startDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
-//    Timestamp startTimestamp = Timestamp.valueOf(startZDT.toLocalDateTime());
-//    
-//    //processing end time for timezone in database
-//    LocalTime endTime = LocalTime.parse(
-//            endCbx.getSelectionModel().getSelectedItem().toString());
-//    LocalDateTime endDT = LocalDateTime.of(localDate, endTime);
-//    ZonedDateTime endZDT = endDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));            
-//    Timestamp endTimestamp = Timestamp.valueOf(endZDT.toLocalDateTime());   
-
-    LocalDateTime startDateTime = LocalDateTime.of(datePicker.getValue(),
-                                                (LocalTime) startCbx.getSelectionModel().getSelectedItem());
+    LocalDate localDate = datePicker.getValue();
+    LocalTime startTime = LocalTime.parse(
+            startCbx.getSelectionModel().getSelectedItem().toString());
+    LocalDateTime startDT = LocalDateTime.of(localDate, startTime);
+    ZonedDateTime startZDT = startDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
+    Timestamp startTimestamp = Timestamp.valueOf(startZDT.toLocalDateTime());
     
-    LocalDateTime endDateTime = LocalDateTime.of(datePicker.getValue(),
-                                                (LocalTime)endCbx.getSelectionModel().getSelectedItem());
+    //processing end time for timezone in database
+    LocalTime endTime = LocalTime.parse(
+            endCbx.getSelectionModel().getSelectedItem().toString());
+    LocalDateTime endDT = LocalDateTime.of(localDate, endTime);
+    ZonedDateTime endZDT = endDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));            
+    Timestamp endTimestamp = Timestamp.valueOf(endZDT.toLocalDateTime());   
+
+//    LocalDateTime startDateTime = LocalDateTime.of(datePicker.getValue(),
+//                                                (LocalTime) startCbx.getSelectionModel().getSelectedItem());
+//    
+//    LocalDateTime endDateTime = LocalDateTime.of(datePicker.getValue(),
+//                                                (LocalTime)endCbx.getSelectionModel().getSelectedItem());
     
     PreparedStatement updateApptStmt = DBConnection.conn.prepareStatement("update appointment "
       + "set title = ?, description = ?, location = ?, "
@@ -252,8 +245,8 @@ public class ApptController implements Initializable {
     updateApptStmt.setString(1, titleCbx.getSelectionModel().getSelectedItem().toString());
     updateApptStmt.setString(2, descCbx.getSelectionModel().getSelectedItem().toString());
     updateApptStmt.setString(3, locCbx.getSelectionModel().getSelectedItem().toString());
-    updateApptStmt.setString(4, startDateTime.toString());
-    updateApptStmt.setString(5, endDateTime.toString());
+    updateApptStmt.setString(4, startTimestamp.toString());
+    updateApptStmt.setString(5, endTimestamp.toString());
     updateApptStmt.setString(6, LoginController.currentUser.getUsername());
     updateApptStmt.setString(7, appt.getAppointmentId());
 
@@ -282,8 +275,8 @@ public class ApptController implements Initializable {
 
       appt.setStart(localStart.format(dtFormat));
       appt.setEnd(localEnd.format(dtFormat));
-
-      appointments.set(index, appt);
+      
+      if (isValidData(appt)) appointments.set(index, appt);
       
       DBConnection.disconnect();
       
@@ -291,6 +284,33 @@ public class ApptController implements Initializable {
       stage.close();
       
     }
+  }
+  
+  private boolean isValidData(Appointment newAppt){
+    boolean validData = true;
+    
+    LocalDateTime newStart = LocalDateTime.parse(newAppt.getStart(), dtFormat);
+    LocalDateTime newEnd = LocalDateTime.parse(newAppt.getEnd(), dtFormat);
+    
+    for(Appointment appt : appointments){
+      
+      LocalDateTime existingStart = LocalDateTime.parse(appt.getStart(), dtFormat);
+      LocalDateTime existingEnd = LocalDateTime.parse(appt.getEnd(), dtFormat);
+
+      if(newStart.equals(existingStart) || newEnd.equals(existingEnd)){
+        
+        validData = false;
+        
+        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+        alert.initModality(Modality.APPLICATION_MODAL);
+        alert.setTitle("Approaching Appointment");
+        alert.setContentText("This time is already assigned");
+        alert.showAndWait();
+        
+      }
+    }
+    
+    return validData;
   }
 
 }

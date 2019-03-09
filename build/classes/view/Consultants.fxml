@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="760.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.ConsultantsController">
+   <children>
+      <ComboBox fx:id="consultCbx" layoutX="267.0" layoutY="48.0" prefWidth="150.0" />
+      <Label layoutX="37.0" layoutY="50.0" text="Choose Consultant">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      
+      <TableView fx:id="apptTbl" layoutX="37.0" layoutY="108.0" prefHeight="200.0" prefWidth="670.0">
+        <columns>
+          <TableColumn fx:id="apptCustCol" prefWidth="101.0" text="Customer " />
+          <TableColumn fx:id="apptTitleCol" prefWidth="97.0" text="Title" />
+            <TableColumn fx:id="apptDescCol" prefWidth="96.0" text="Description" />
+            <TableColumn fx:id="apptLocCol" minWidth="0.0" prefWidth="101.0" text="Location" />
+            <TableColumn fx:id="apptStartCol" prefWidth="129.0" text="Start" />
+            <TableColumn fx:id="apptEndCol" prefWidth="129.0" text="End" />
+        </columns>
+      </TableView>
+   </children>
+</AnchorPane>

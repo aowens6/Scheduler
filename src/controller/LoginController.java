@@ -108,8 +108,8 @@ public class LoginController implements Initializable {
     Parent addPartParent = (Parent) scheduleLoader.load();
     
     SchedulesController schedController = scheduleLoader.getController();
-    schedController.getAllCustomers();
-    schedController.getAllAppts();
+//    schedController.getAllCustomers();
+//    schedController.getAllAppts();
     
     Scene addPartScene = new Scene(addPartParent);
 
