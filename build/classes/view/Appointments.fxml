@@ -113,5 +113,6 @@
             <TextField fx:id="custTxt" disable="true" editable="false" />
          </children>
       </HBox>
+      <Label layoutX="58.0" layoutY="28.0" prefHeight="27.0" prefWidth="360.0" text="* Times are local business hours. They will be saved to the database in UTC time " wrapText="true" />
    </children>
 </AnchorPane>

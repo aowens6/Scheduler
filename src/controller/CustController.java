@@ -37,6 +37,7 @@ public class CustController implements Initializable {
 
   @FXML
   private AnchorPane anchorPane;
+  
   @FXML
   private Label idLbl, nameLbl, addrLbl, phoneLbl;
   

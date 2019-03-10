@@ -86,8 +86,14 @@ public class ConsultantsController implements Initializable {
 
     apptTbl.setItems(sortedAppts);
     
+    //This lambda is necessary because the setCellValueFactory method
+    //takes a Callback to find the value. The SimpleStringProperty is used because
+    //the customer name is a property on  Customer
+    //object that is a property of the Appointment.
+    
     apptCustCol.setCellValueFactory(cellData -> 
         new SimpleStringProperty(cellData.getValue().getCustomer().getCustomerName()));
+    
     apptTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
     apptDescCol.setCellValueFactory(new PropertyValueFactory<>("description"));
     apptLocCol.setCellValueFactory(new PropertyValueFactory<>("location"));

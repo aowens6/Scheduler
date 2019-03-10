@@ -25,6 +25,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import model.User;
 import util.DBConnection;
+import util.Logging;
 
 /**
  *
@@ -73,6 +74,8 @@ public class LoginController implements Initializable {
         user.setUsername(usernameField.getText());
         user.setUserID(Integer.parseInt(rs.getString("userId")));
         currentUser = user;
+        Logging.init();
+        Logging.logger.info("Logging in user: " + user.getUsername());
         Stage stage = (Stage) anchorPane.getScene().getWindow();
         stage.close();
         viewScheduleStage();
@@ -106,13 +109,10 @@ public class LoginController implements Initializable {
     FXMLLoader scheduleLoader = new FXMLLoader(getClass().getResource("/view/Schedules.fxml"));
     scheduleLoader.setResources(rb);
     Parent addPartParent = (Parent) scheduleLoader.load();
-    
-    SchedulesController schedController = scheduleLoader.getController();
 
     Scene addPartScene = new Scene(addPartParent);
     
     Stage stage = new Stage();
-//    stage.setOnCloseRequest(event -> schedController.exitProgram(event)); 
     stage.setScene(addPartScene);
     stage.setTitle("Schedules");
     stage.show();

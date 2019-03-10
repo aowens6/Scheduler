@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Month;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -94,6 +95,7 @@ public class SchedulesController extends Thread implements Initializable{
   
   private final DateTimeFormatter dtFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
   private final ZoneId localZoneId = ZoneId.systemDefault();
+  private LocalDate monday;
   private LocalDate sunday;
   
   @Override
@@ -108,6 +110,10 @@ public class SchedulesController extends Thread implements Initializable{
       e.printStackTrace();
     }
     
+    //when creating a FilteredList you can use the constructor with a
+    //second parameter of a Predicate and set it to the value you want to match
+    // for each of the first parameter, which is 
+    // an  observableList of appointments in this case
     
     filteredAppts = new FilteredList<>(appointments, p -> true);
     
@@ -116,7 +122,13 @@ public class SchedulesController extends Thread implements Initializable{
           Toggle oldToggle, Toggle newToggle) {
         
         checkedBtn = (RadioButton) newToggle.getToggleGroup().getSelectedToggle(); 
-
+        
+        //In this lambda expression, the FilteredList has a 
+        //setPredicate method that takes a Predicate
+        //to do the filtering. The parameter of the expression is the individual
+        //appointment and the block of code decides which appointment 
+        //meets the appropriate conditions to appear on the list.
+        
         filteredAppts.setPredicate(appt -> {
           if(checkedBtn.equals(allRb)){
             return true;
@@ -127,7 +139,7 @@ public class SchedulesController extends Thread implements Initializable{
             
             return true;
           } else if(checkedBtn.equals(weekRb) && LocalDate.parse(appt.getStart(), dtFormat)
-                                                .isAfter(LocalDate.now()) &&
+                                                .isAfter(monday) &&
                                         LocalDate.parse(appt.getStart(), dtFormat)
                                                 .isBefore(sunday)){
             return true;
@@ -147,11 +159,15 @@ public class SchedulesController extends Thread implements Initializable{
 
     apptTbl.setItems(sortedAppts);
     
-//    TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-    
     this.rb = rb;
     
     nameCol.setCellValueFactory(new PropertyValueFactory<>("customerName"));
+    
+    //The following lambdas are necessary because the setCellValueFactory method
+    //takes a Callback to find the value. The SimpleStringProperty is used because
+    //the phone, address and customer name are properties on the Address and Customer
+    //objects that are properties of the Appointment.
+    
     phoneCol.setCellValueFactory(cellData -> 
         new SimpleStringProperty(cellData.getValue().getAddress().getPhone()));
     addressCol.setCellValueFactory(cellData -> 
@@ -159,6 +175,7 @@ public class SchedulesController extends Thread implements Initializable{
     
     apptCustCol.setCellValueFactory(cellData -> 
         new SimpleStringProperty(cellData.getValue().getCustomer().getCustomerName()));
+    
     apptTitleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
     apptDescCol.setCellValueFactory(new PropertyValueFactory<>("description"));
     apptLocCol.setCellValueFactory(new PropertyValueFactory<>("location"));
@@ -171,16 +188,22 @@ public class SchedulesController extends Thread implements Initializable{
 
   public void apptWarning(){
     
-    LocalDateTime now = LocalDateTime.now(localZoneId);
-    LocalDateTime later = LocalDateTime.now(localZoneId).plusMinutes(15);
-    
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime later = LocalDateTime.now().plusMinutes(15);
+
     for(Appointment appt : appointments){
-      if(LocalDateTime.parse(appt.getStart(), dtFormat).isAfter(now) &&
-              LocalDateTime.parse(appt.getStart(), dtFormat).isBefore(later)){
+      
+      LocalDateTime apptStart = LocalDateTime.parse(appt.getStart(), dtFormat);
+      ZonedDateTime startZDT = apptStart.atZone(localZoneId);
+      ZonedDateTime localStart = startZDT.withZoneSameInstant(ZoneId.of("UTC"));
+      
+      if(localStart.toLocalDateTime().isAfter(now) &&
+              localStart.toLocalDateTime().isBefore(later)){
         Alert alert = new Alert(Alert.AlertType.INFORMATION); 
         alert.initModality(Modality.APPLICATION_MODAL);
         alert.setTitle("Approaching Appointment");
-        alert.setContentText("An appointment for " + appt.getCustomer().getCustomerName() + " will happen in 15 minutes");
+        alert.setContentText("There is an appointment for " + appt.getCustomer().getCustomerName() 
+                + " at " + localStart.format(dtFormat));
         alert.showAndWait();
         return;
       }
@@ -191,12 +214,22 @@ public class SchedulesController extends Thread implements Initializable{
   public void getLastWeekDay(){
     LocalDate today = LocalDate.now();
 
+    // Go backward to get monday
+    monday = today;
+    while (monday.getDayOfWeek() != DayOfWeek.MONDAY) {
+      monday = monday.minusDays(1);
+    }
+    
     // Go forward to get Sunday
     sunday = today;
     while (sunday.getDayOfWeek() != DayOfWeek.SUNDAY) {
       sunday = sunday.plusDays(1);
     }
-
+    
+    //making the range one day longer on both sides 
+    //so that these days are included when .isAfter()/.isBefore() is used
+    monday = monday.minusDays(1);
+    sunday = sunday.plusDays(1);
   }
   
   public void getAllCustomers() throws SQLException, ClassNotFoundException, IOException{
@@ -308,6 +341,10 @@ public class SchedulesController extends Thread implements Initializable{
     Stage stage = new Stage();
     
     CustController custController = addCustLoader.getController();
+    
+    //This lambda is used because the setOnCloseRequest method
+    //requires an EventHandler object. The code becomes shorter and more
+    //readable with a lambda. Java knows that an EventHandler is passed in as "event"
     stage.setOnCloseRequest(event -> custController.cancel(event));
 
     stage.initModality(Modality.APPLICATION_MODAL);
@@ -330,6 +367,10 @@ public class SchedulesController extends Thread implements Initializable{
     CustController custController = modCustLoader.getController();
     custController.setCustomer(custTbl.getSelectionModel().getSelectedItem(),
                                custTbl.getSelectionModel().getSelectedIndex());
+    
+    //This lambda is used because the setOnCloseRequest method
+    //requires an EventHandler object. The code becomes shorter and more
+    //readable with a lambda. Java knows that an EventHandler is passed in as "event"
     stage.setOnCloseRequest(event -> custController.cancel(event));
 
     stage.initModality(Modality.APPLICATION_MODAL);
@@ -403,6 +444,11 @@ public class SchedulesController extends Thread implements Initializable{
     Stage stage = new Stage();
     
     ApptController addController = apptLoader.getController();
+    
+    //This lambda is used because the setOnCloseRequest method
+    //requires an EventHandler object. The code becomes shorter and more
+    //readable with a lambda. Java knows that an EventHandler is passed in as "event"
+    
     stage.setOnCloseRequest(event -> addController.cancel(event));
 
     stage.initModality(Modality.APPLICATION_MODAL);
@@ -427,6 +473,10 @@ public class SchedulesController extends Thread implements Initializable{
     Stage stage = new Stage();
     
     ApptController modController = apptLoader.getController();
+    
+    //This lambda is used because the setOnCloseRequest method
+    //requires an EventHandler object. The code becomes shorter and more
+    //readable with a lambda. Java knows that an EventHandler is passed in as "event"
     stage.setOnCloseRequest(event -> modController.cancel(event));
 
     stage.initModality(Modality.APPLICATION_MODAL);
@@ -568,6 +618,11 @@ public class SchedulesController extends Thread implements Initializable{
       PieChart.Data piece = new PieChart.Data(rs.getString("country"), rs.getInt("count(appointmentId)"));
       pieChartData.add(piece);
     }
+    
+    
+    //In the forEach method, it iterates over all the 
+    //pieChartData with a Consumer interface that does some binding 
+    //to output the number of appointments alongside the country name
     
     pieChartData.forEach(data ->
       data.nameProperty().bind(

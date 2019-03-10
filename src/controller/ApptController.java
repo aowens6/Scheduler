@@ -9,8 +9,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -59,7 +57,6 @@ public class ApptController implements Initializable {
   private int index;
   
   private final DateTimeFormatter dtFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
-  private final DateFormat timeFormat = new SimpleDateFormat("hh:mm a");
   private final ZoneId localZoneId = ZoneId.systemDefault();
   
   private List<LocalTime> startIntervals = new ArrayList<>();
@@ -111,6 +108,11 @@ public class ApptController implements Initializable {
   
   public void setAppt(Appointment appt, int index){
     
+    //The setOnActionMethod requires an EventHandler object as a parameter.
+    //Lambdas shorten the code and make it more readable
+    //In the anonymous function the Save button's behavior is changed since 
+    //the setAppt method only gets called for updating an existing appointment
+    //and that requires a different implementation of saving
     saveBtn.setOnAction(e ->  {
       try{
         saveModAppt();
@@ -224,8 +226,6 @@ public class ApptController implements Initializable {
   public void saveModAppt() throws SQLException, ClassNotFoundException, IOException{
     
     ResultSet apptSet = null;
-    boolean isStartModified = false;
-    boolean isEndModified = false;
     
     DBConnection.connect();
     
@@ -243,12 +243,6 @@ public class ApptController implements Initializable {
 //    LocalDateTime endDT = LocalDateTime.of(localDate, endTime);
 //    ZonedDateTime endZDT = endDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));            
 //    Timestamp endTimestamp = Timestamp.valueOf(endZDT.toLocalDateTime());
-//    
-//    
-//    if(!originalStart.toLocalTime().equals(startTime) || 
-//       !originalEnd.toLocalTime().equals(endTime) ){
-//      isTimeModified = true;
-//    }
 
     LocalDateTime startDT = LocalDateTime.of(datePicker.getValue(),
        LocalTime.parse(startCbx.getSelectionModel().getSelectedItem().toString()) );
@@ -310,33 +304,6 @@ public class ApptController implements Initializable {
     }
   }
 
-//  private boolean isValidData(Appointment newAppt){
-//    boolean validData = true;
-//    
-//    LocalDateTime newStart = LocalDateTime.parse(newAppt.getStart(), dtFormat);
-//    LocalDateTime newEnd = LocalDateTime.parse(newAppt.getEnd(), dtFormat);
-//    
-//    for(Appointment appt : appointments){
-//      
-//      LocalDateTime existingStart = LocalDateTime.parse(appt.getStart(), dtFormat);
-//      LocalDateTime existingEnd = LocalDateTime.parse(appt.getEnd(), dtFormat);
-//
-//      if(newStart.equals(existingStart) || newEnd.equals(existingEnd)){
-//        
-//        validData = false;
-//        
-//        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
-//        alert.initModality(Modality.APPLICATION_MODAL);
-//        alert.setTitle("Overlapping Appointment");
-//        alert.setContentText("This time is already assigned");
-//        alert.showAndWait();
-//        
-//      }
-//    }
-//    
-//    return validData;
-//  }
-  
   private boolean isValidTime(LocalDateTime startTime, LocalDateTime endTime){
     
     boolean validTime = true;
@@ -420,7 +387,7 @@ public class ApptController implements Initializable {
 
       Alert alert = new Alert(Alert.AlertType.INFORMATION); 
       alert.initModality(Modality.APPLICATION_MODAL);
-      alert.setTitle("Approaching Appointment");
+      alert.setTitle("Appointment Hours Issue");
       alert.setContentText("The starting time needs to precede the ending time");
       alert.showAndWait();
       
@@ -432,7 +399,7 @@ public class ApptController implements Initializable {
 
       Alert alert = new Alert(Alert.AlertType.INFORMATION); 
       alert.initModality(Modality.APPLICATION_MODAL);
-      alert.setTitle("Approaching Appointment");
+      alert.setTitle("Appointment Hours Issue");
       alert.setContentText("Times need to be after 09:00 and before 17:00");
       alert.showAndWait();
       

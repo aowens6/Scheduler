@@ -6,9 +6,8 @@
 package controller;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -40,8 +39,6 @@ public class Main extends Application {
   public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
     
     DBConnection.connect();
-//    Logging.init();
-//    Logging.logger.info("msg from MAIN");
     launch(args);
     DBConnection.disconnect();
 
