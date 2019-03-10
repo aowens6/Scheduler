@@ -39,12 +39,6 @@ public class Main extends Application {
 
   public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
     
-    Path currentRelativePath = Paths.get("/util");
-   
-    String s = currentRelativePath.relativize(currentRelativePath).toString();
-//    String s = currentRelativePath.toAbsolutePath().relativize(currentRelativePath).toString();
-    System.out.println("Current relative path is: " + s);
-    
     DBConnection.connect();
 //    Logging.init();
 //    Logging.logger.info("msg from MAIN");

@@ -6,12 +6,11 @@
 package controller;
 
 import static controller.SchedulesController.appointments;
-import static controller.SchedulesController.filteredAppts;
+import java.io.IOException;
 import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.ResourceBundle;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -51,7 +50,7 @@ public class ConsultantsController implements Initializable {
   
     try{
       getAllConsultants();
-    }catch(SQLException e){
+    }catch(SQLException | ClassNotFoundException | IOException e){
       e.printStackTrace();
     }
     
@@ -69,8 +68,6 @@ public class ConsultantsController implements Initializable {
             currentUser = user;
           }
         }
-        
-        System.out.println(currentUser.getUserID());
         
         filteredAppts.setPredicate(appt -> {
             
@@ -99,7 +96,10 @@ public class ConsultantsController implements Initializable {
 
   }
   
-  private void getAllConsultants() throws SQLException{
+  private void getAllConsultants() throws SQLException, ClassNotFoundException, IOException{
+    
+    DBConnection.connect();
+    
     PreparedStatement stmt = DBConnection.conn.prepareStatement("select userName, userId from user");
     ResultSet rs = stmt.executeQuery();
     
@@ -110,6 +110,7 @@ public class ConsultantsController implements Initializable {
       users.add(user);
     }
     
+    DBConnection.disconnect();
   }
   
 }

@@ -9,6 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -57,10 +59,12 @@ public class ApptController implements Initializable {
   private int index;
   
   private final DateTimeFormatter dtFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
+  private final DateFormat timeFormat = new SimpleDateFormat("hh:mm a");
   private final ZoneId localZoneId = ZoneId.systemDefault();
   
   private List<LocalTime> startIntervals = new ArrayList<>();
   private List<LocalTime> endIntervals = new ArrayList<>();
+  private LocalDateTime originalStart, originalEnd;
 
   @Override
   public void initialize(URL url, ResourceBundle rb) {
@@ -118,10 +122,16 @@ public class ApptController implements Initializable {
     this.appt = appt;
     this.index = index;
     
+    originalStart = LocalDateTime.parse(appt.getStart(), dtFormat);
+    originalEnd = LocalDateTime.parse(appt.getEnd(), dtFormat);
+    
+    ZonedDateTime startZDT = originalStart.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
+    ZonedDateTime endZDT = originalEnd.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
+
     custTxt.setText(appt.getCustomer().getCustomerName());
 
-    startCbx.getItems().add(0, LocalTime.parse(appt.getStart(), dtFormat));
-    endCbx.getItems().add(0, LocalTime.parse(appt.getEnd(), dtFormat));
+    startCbx.getItems().add(0, startZDT.toLocalTime());
+    endCbx.getItems().add(0, endZDT.toLocalTime());
 
     titleCbx.getSelectionModel().select(appt.getTitle());
     descCbx.getSelectionModel().select(appt.getDescription());
@@ -140,71 +150,72 @@ public class ApptController implements Initializable {
     DBConnection.connect();
 
     LocalDateTime startDateTime = LocalDateTime.of(datePicker.getValue(),
-                                                (LocalTime) startCbx.getSelectionModel().getSelectedItem());
+       LocalTime.parse(startCbx.getSelectionModel().getSelectedItem().toString()) );
     
     LocalDateTime endDateTime = LocalDateTime.of(datePicker.getValue(),
-                                                (LocalTime)endCbx.getSelectionModel().getSelectedItem());
+      LocalTime.parse(endCbx.getSelectionModel().getSelectedItem().toString()) );
 
-    
-    PreparedStatement insertApptStmt = DBConnection.conn.prepareStatement("insert into appointment "
-      + "(customerId,title,description,location,contact,url,start,end,createDate,createdBy,lastUpdate,lastUpdateBy) "
-      + "values(?,?,?,?,?,'',?,?,CURRENT_TIMESTAMP,?,CURRENT_TIMESTAMP,?)");
-    insertApptStmt.setString(1, customer.getCustomerId());                                  //CUST ID
-    insertApptStmt.setString(2, titleCbx.getSelectionModel().getSelectedItem().toString()); //TITLE
-    insertApptStmt.setString(3, descCbx.getSelectionModel().getSelectedItem().toString());  //DESC
-    insertApptStmt.setString(4, locCbx.getSelectionModel().getSelectedItem().toString());   //LOCATION
-    insertApptStmt.setString(5, LoginController.currentUser.getUsername());                 //CONTACT
-                                                                                            //URL
-    insertApptStmt.setString(6, startDateTime.toString());                                  //START
-    insertApptStmt.setString(7, endDateTime.toString());                                    //END
-                                                                                            //CREATEDATE
-    insertApptStmt.setString(8, LoginController.currentUser.getUsername());                 //CREATEDBY
-                                                                                            //LASTUPDATE
-    insertApptStmt.setString(9, LoginController.currentUser.getUsername());                 //LASTUPDATEBY
+    if (isValidTime(startDateTime, endDateTime)){
 
-    insertApptStmt.executeUpdate();
+      PreparedStatement insertApptStmt = DBConnection.conn.prepareStatement("insert into appointment "
+        + "(customerId,title,description,location,contact,url,start,end,createDate,createdBy,lastUpdate,lastUpdateBy) "
+        + "values(?,?,?,?,?,'',?,?,CURRENT_TIMESTAMP,?,CURRENT_TIMESTAMP,?)");
+      insertApptStmt.setString(1, customer.getCustomerId());                                  //CUST ID
+      insertApptStmt.setString(2, titleCbx.getSelectionModel().getSelectedItem().toString()); //TITLE
+      insertApptStmt.setString(3, descCbx.getSelectionModel().getSelectedItem().toString());  //DESC
+      insertApptStmt.setString(4, locCbx.getSelectionModel().getSelectedItem().toString());   //LOCATION
+      insertApptStmt.setString(5, LoginController.currentUser.getUsername());                 //CONTACT
+                                                                                              //URL
+      insertApptStmt.setString(6, startDateTime.toString());                                  //START
+      insertApptStmt.setString(7, endDateTime.toString());                                    //END
+                                                                                              //CREATEDATE
+      insertApptStmt.setString(8, LoginController.currentUser.getUsername());                 //CREATEDBY
+                                                                                              //LASTUPDATE
+      insertApptStmt.setString(9, LoginController.currentUser.getUsername());                 //LASTUPDATEBY
+
+      insertApptStmt.executeUpdate();
 
 
-    PreparedStatement findNewApptStmt = DBConnection.conn.prepareStatement("select * from appointment "
-            + "where appointmentId = (select max(appointmentId) from appointment)");
+      PreparedStatement findNewApptStmt = DBConnection.conn.prepareStatement("select * from appointment "
+              + "where appointmentId = (select max(appointmentId) from appointment)");
 
-    apptSet = findNewApptStmt.executeQuery();
+      apptSet = findNewApptStmt.executeQuery();
 
-      
-    if(apptSet.first()){
-      
-      Appointment appointment = new Appointment();
-      
-      for(Customer cust : customers){
-        if (cust.getCustomerId().equals(apptSet.getString("customerId"))){
-          appointment.setCustomer(cust);
+
+      if(apptSet.first()){
+
+        Appointment appointment = new Appointment();
+
+        for(Customer cust : customers){
+          if (cust.getCustomerId().equals(apptSet.getString("customerId"))){
+            appointment.setCustomer(cust);
+          }
         }
+
+        appointment.setAppointmentId(apptSet.getString("appointmentId"));
+        appointment.setTitle(apptSet.getString("title"));
+        appointment.setDescription(apptSet.getString("description"));
+        appointment.setLocation(apptSet.getString("location"));
+
+
+        Timestamp startTime = apptSet.getTimestamp("start");
+        ZonedDateTime startZDT = startTime.toLocalDateTime().atZone(ZoneId.of("UTC"));
+        ZonedDateTime localStart = startZDT.withZoneSameInstant(localZoneId);
+
+        Timestamp endTime = apptSet.getTimestamp("end");
+        ZonedDateTime endZDT = endTime.toLocalDateTime().atZone(ZoneId.of("UTC"));
+        ZonedDateTime localEnd = endZDT.withZoneSameInstant(localZoneId);
+
+        appointment.setStart(localStart.format(dtFormat));
+        appointment.setEnd(localEnd.format(dtFormat));
+
+        appointments.add(appointment);
+
+        DBConnection.disconnect();
+
+        Stage stage = (Stage) anchorPane.getScene().getWindow();
+        stage.close();
       }
-      
-      appointment.setAppointmentId(apptSet.getString("appointmentId"));
-      appointment.setTitle(apptSet.getString("title"));
-      appointment.setDescription(apptSet.getString("description"));
-      appointment.setLocation(apptSet.getString("location"));
-      
-      
-      Timestamp startTime = apptSet.getTimestamp("start");
-      ZonedDateTime startZDT = startTime.toLocalDateTime().atZone(ZoneId.of("UTC"));
-      ZonedDateTime localStart = startZDT.withZoneSameInstant(localZoneId);
-      
-      Timestamp endTime = apptSet.getTimestamp("end");
-      ZonedDateTime endZDT = endTime.toLocalDateTime().atZone(ZoneId.of("UTC"));
-      ZonedDateTime localEnd = endZDT.withZoneSameInstant(localZoneId);
-
-      appointment.setStart(localStart.format(dtFormat));
-      appointment.setEnd(localEnd.format(dtFormat));
-
-      appointments.add(appointment);
-      
-      DBConnection.disconnect();
-      
-      Stage stage = (Stage) anchorPane.getScene().getWindow();
-      stage.close();
-      
     }
     
   }
@@ -213,81 +224,92 @@ public class ApptController implements Initializable {
   public void saveModAppt() throws SQLException, ClassNotFoundException, IOException{
     
     ResultSet apptSet = null;
+    boolean isStartModified = false;
+    boolean isEndModified = false;
     
     DBConnection.connect();
     
-    //processing start time for timezones in database
-    LocalDate localDate = datePicker.getValue();
-    LocalTime startTime = LocalTime.parse(
-            startCbx.getSelectionModel().getSelectedItem().toString());
-    LocalDateTime startDT = LocalDateTime.of(localDate, startTime);
-    ZonedDateTime startZDT = startDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
-    Timestamp startTimestamp = Timestamp.valueOf(startZDT.toLocalDateTime());
-    
-    //processing end time for timezone in database
-    LocalTime endTime = LocalTime.parse(
-            endCbx.getSelectionModel().getSelectedItem().toString());
-    LocalDateTime endDT = LocalDateTime.of(localDate, endTime);
-    ZonedDateTime endZDT = endDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));            
-    Timestamp endTimestamp = Timestamp.valueOf(endZDT.toLocalDateTime());   
-
-//    LocalDateTime startDateTime = LocalDateTime.of(datePicker.getValue(),
-//                                                (LocalTime) startCbx.getSelectionModel().getSelectedItem());
+//    //processing start time for timezones in database
+//    LocalDate localDate = datePicker.getValue();
+//    LocalTime startTime = LocalTime.parse(
+//            startCbx.getSelectionModel().getSelectedItem().toString());
+//    LocalDateTime startDT = LocalDateTime.of(localDate, startTime);
+//    ZonedDateTime startZDT = startDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
+//    Timestamp startTimestamp = Timestamp.valueOf(startZDT.toLocalDateTime());
 //    
-//    LocalDateTime endDateTime = LocalDateTime.of(datePicker.getValue(),
-//                                                (LocalTime)endCbx.getSelectionModel().getSelectedItem());
+//    //processing end time for timezone in database
+//    LocalTime endTime = LocalTime.parse(
+//            endCbx.getSelectionModel().getSelectedItem().toString());
+//    LocalDateTime endDT = LocalDateTime.of(localDate, endTime);
+//    ZonedDateTime endZDT = endDT.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));            
+//    Timestamp endTimestamp = Timestamp.valueOf(endZDT.toLocalDateTime());
+//    
+//    
+//    if(!originalStart.toLocalTime().equals(startTime) || 
+//       !originalEnd.toLocalTime().equals(endTime) ){
+//      isTimeModified = true;
+//    }
+
+    LocalDateTime startDT = LocalDateTime.of(datePicker.getValue(),
+       LocalTime.parse(startCbx.getSelectionModel().getSelectedItem().toString()) );
     
-    PreparedStatement updateApptStmt = DBConnection.conn.prepareStatement("update appointment "
-      + "set title = ?, description = ?, location = ?, "
-      + "start = ?, end = ?, "
-      + "lastUpdate = CURRENT_TIMESTAMP, lastUpdateBy = ? "
-      + "where appointmentId = ?");
-    
-    updateApptStmt.setString(1, titleCbx.getSelectionModel().getSelectedItem().toString());
-    updateApptStmt.setString(2, descCbx.getSelectionModel().getSelectedItem().toString());
-    updateApptStmt.setString(3, locCbx.getSelectionModel().getSelectedItem().toString());
-    updateApptStmt.setString(4, startTimestamp.toString());
-    updateApptStmt.setString(5, endTimestamp.toString());
-    updateApptStmt.setString(6, LoginController.currentUser.getUsername());
-    updateApptStmt.setString(7, appt.getAppointmentId());
+    LocalDateTime endDT = LocalDateTime.of(datePicker.getValue(),
+      LocalTime.parse(endCbx.getSelectionModel().getSelectedItem().toString()) );
 
-    updateApptStmt.executeUpdate();
+    if (isValidTime(startDT, endDT, Integer.parseInt(appt.getAppointmentId()))){
 
-    PreparedStatement findUpdApptStmt = DBConnection.conn.prepareStatement("select * from appointment "
-            + "where appointmentId = ?");
-    findUpdApptStmt.setString(1, appt.getAppointmentId());
+      PreparedStatement updateApptStmt = DBConnection.conn.prepareStatement("update appointment "
+        + "set title = ?, description = ?, location = ?, "
+        + "start = ?, end = ?, "
+        + "lastUpdate = CURRENT_TIMESTAMP, lastUpdateBy = ? "
+        + "where appointmentId = ?");
 
-    apptSet = findUpdApptStmt.executeQuery();
-    
-    if(apptSet.first()){
+      updateApptStmt.setString(1, titleCbx.getSelectionModel().getSelectedItem().toString());
+      updateApptStmt.setString(2, descCbx.getSelectionModel().getSelectedItem().toString());
+      updateApptStmt.setString(3, locCbx.getSelectionModel().getSelectedItem().toString());
+//      updateApptStmt.setString(4, startTimestamp.toString());
+//      updateApptStmt.setString(5, endTimestamp.toString());
+      updateApptStmt.setString(4, startDT.toString());
+      updateApptStmt.setString(5, endDT.toString());
+      updateApptStmt.setString(6, LoginController.currentUser.getUsername());
+      updateApptStmt.setString(7, appt.getAppointmentId());
 
-      appt.setAppointmentId(apptSet.getString("appointmentId"));
-      appt.setTitle(apptSet.getString("title"));
-      appt.setDescription(apptSet.getString("description"));
-      appt.setLocation(apptSet.getString("location"));
+      updateApptStmt.executeUpdate();
 
-      Timestamp localStartTS = apptSet.getTimestamp("start");
-      ZonedDateTime localStartZDT = localStartTS.toLocalDateTime().atZone(ZoneId.of("UTC"));
-      ZonedDateTime localStart = localStartZDT.withZoneSameInstant(localZoneId);
-      
-      Timestamp localEndTS = apptSet.getTimestamp("end");
-      ZonedDateTime localEndZDT = localEndTS.toLocalDateTime().atZone(ZoneId.of("UTC"));
-      ZonedDateTime localEnd = localEndZDT.withZoneSameInstant(localZoneId);
+      PreparedStatement findUpdApptStmt = DBConnection.conn.prepareStatement("select * from appointment "
+              + "where appointmentId = ?");
+      findUpdApptStmt.setString(1, appt.getAppointmentId());
 
-      appt.setStart(localStart.format(dtFormat));
-      appt.setEnd(localEnd.format(dtFormat));
-      
-      appointments.set(index, appt);
-      
-      DBConnection.disconnect();
-      
-      Stage stage = (Stage) anchorPane.getScene().getWindow();
-      stage.close();
-      
+      apptSet = findUpdApptStmt.executeQuery();
+
+      if(apptSet.first()){
+
+        appt.setAppointmentId(apptSet.getString("appointmentId"));
+        appt.setTitle(apptSet.getString("title"));
+        appt.setDescription(apptSet.getString("description"));
+        appt.setLocation(apptSet.getString("location"));
+
+        Timestamp localStartTS = apptSet.getTimestamp("start");
+        ZonedDateTime localStartZDT = localStartTS.toLocalDateTime().atZone(ZoneId.of("UTC"));
+        ZonedDateTime localStart = localStartZDT.withZoneSameInstant(localZoneId);
+
+        Timestamp localEndTS = apptSet.getTimestamp("end");
+        ZonedDateTime localEndZDT = localEndTS.toLocalDateTime().atZone(ZoneId.of("UTC"));
+        ZonedDateTime localEnd = localEndZDT.withZoneSameInstant(localZoneId);
+
+        appt.setStart(localStart.format(dtFormat));
+        appt.setEnd(localEnd.format(dtFormat));
+
+        appointments.set(index, appt);
+
+        DBConnection.disconnect();
+
+        Stage stage = (Stage) anchorPane.getScene().getWindow();
+        stage.close();
+      }
     }
   }
-  
-//  
+
 //  private boolean isValidData(Appointment newAppt){
 //    boolean validData = true;
 //    
@@ -305,7 +327,7 @@ public class ApptController implements Initializable {
 //        
 //        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
 //        alert.initModality(Modality.APPLICATION_MODAL);
-//        alert.setTitle("Approaching Appointment");
+//        alert.setTitle("Overlapping Appointment");
 //        alert.setContentText("This time is already assigned");
 //        alert.showAndWait();
 //        
@@ -314,6 +336,134 @@ public class ApptController implements Initializable {
 //    
 //    return validData;
 //  }
+  
+  private boolean isValidTime(LocalDateTime startTime, LocalDateTime endTime){
+    
+    boolean validTime = true;
+    
+    if(startTime.toLocalTime().equals(endTime.toLocalTime())){
+      
+      Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+      alert.initModality(Modality.APPLICATION_MODAL);
+      alert.setTitle("Invalid Times");
+      alert.setContentText("Start and end cannot be equal");
+      alert.showAndWait();
+      
+      return validTime = false;
+      
+    }
+    
+    if(startTime.toLocalTime().isAfter(endTime.toLocalTime())){
+
+      Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+      alert.initModality(Modality.APPLICATION_MODAL);
+      alert.setTitle("Approaching Appointment");
+      alert.setContentText("The starting time needs to precede the ending time");
+      alert.showAndWait();
+      
+      return validTime = false;
+    }
+    
+    if(startTime.toLocalTime().isBefore(LocalTime.of(9, 00, 0)) || 
+       endTime.toLocalTime().isAfter(LocalTime.of(17, 00, 0))){
+
+      Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+      alert.initModality(Modality.APPLICATION_MODAL);
+      alert.setTitle("Approaching Appointment");
+      alert.setContentText("Times need to be after 09:00 and before 17:00");
+      alert.showAndWait();
+      
+      return validTime = false;
+    }
+    
+    for(Appointment appt : appointments){
+      
+      LocalDateTime existingStart = LocalDateTime.parse(appt.getStart(), dtFormat);
+      LocalDateTime existingEnd = LocalDateTime.parse(appt.getEnd(), dtFormat);
+      
+      ZonedDateTime startZDT = existingStart.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
+      ZonedDateTime endZDT = existingEnd.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
+
+      if(startTime.equals(startZDT.toLocalDateTime()) || endTime.equals(endZDT.toLocalDateTime())){
+        
+        validTime = false;
+        
+        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+        alert.initModality(Modality.APPLICATION_MODAL);
+        alert.setTitle("Overlapping Appointment");
+        alert.setContentText("This time is already assigned");
+        alert.showAndWait();
+        
+      }
+    }
+    
+    return validTime;
+  }
+  
+  private boolean isValidTime(LocalDateTime startTime, LocalDateTime endTime, int apptId){
+    
+    boolean validTime = true;
+    
+    if(startTime.toLocalTime().equals(endTime.toLocalTime())){
+      
+      Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+      alert.initModality(Modality.APPLICATION_MODAL);
+      alert.setTitle("Invalid Times");
+      alert.setContentText("Start and end cannot be equal");
+      alert.showAndWait();
+      
+      return validTime = false;
+      
+    }
+    
+    if(startTime.toLocalTime().isAfter(endTime.toLocalTime())){
+
+      Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+      alert.initModality(Modality.APPLICATION_MODAL);
+      alert.setTitle("Approaching Appointment");
+      alert.setContentText("The starting time needs to precede the ending time");
+      alert.showAndWait();
+      
+      return validTime = false;
+    }
+    
+    if(startTime.toLocalTime().isBefore(LocalTime.of(9, 00, 0)) || 
+       endTime.toLocalTime().isAfter(LocalTime.of(17, 00, 0))){
+
+      Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+      alert.initModality(Modality.APPLICATION_MODAL);
+      alert.setTitle("Approaching Appointment");
+      alert.setContentText("Times need to be after 09:00 and before 17:00");
+      alert.showAndWait();
+      
+      return validTime = false;
+    }
+    
+    for(Appointment appt : appointments){
+      
+      LocalDateTime existingStart = LocalDateTime.parse(appt.getStart(), dtFormat);
+      LocalDateTime existingEnd = LocalDateTime.parse(appt.getEnd(), dtFormat);
+      
+      //converting it to local time zone, timezone will then get truncated
+      ZonedDateTime startZDT = existingStart.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
+      ZonedDateTime endZDT = existingEnd.atZone(localZoneId).withZoneSameInstant(ZoneId.of("UTC"));
+
+      if(Integer.parseInt(appt.getAppointmentId()) != apptId && 
+         (startTime.equals(startZDT.toLocalDateTime()) || endTime.equals(endZDT.toLocalDateTime()))){
+        
+        Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+        alert.initModality(Modality.APPLICATION_MODAL);
+        alert.setTitle("Overlapping Appointment");
+        alert.setContentText("This time is already assigned");
+        alert.showAndWait();
+        
+        return validTime = false;
+        
+      }
+    }
+    
+    return validTime;
+  }
   
   @FXML
   public void cancel(Event e) {

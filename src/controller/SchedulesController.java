@@ -104,7 +104,7 @@ public class SchedulesController extends Thread implements Initializable{
     try{
       getAllCustomers();
       getAllAppts();
-    }catch (SQLException e){
+    }catch (SQLException | ClassNotFoundException| IOException e){
       e.printStackTrace();
     }
     
@@ -199,7 +199,9 @@ public class SchedulesController extends Thread implements Initializable{
 
   }
   
-  public void getAllCustomers() throws SQLException{
+  public void getAllCustomers() throws SQLException, ClassNotFoundException, IOException{
+    
+    DBConnection.connect();
     
     PreparedStatement stmt = DBConnection.conn.prepareStatement(
       "select customer.customerId, customer.customerName, " +
@@ -213,8 +215,6 @@ public class SchedulesController extends Thread implements Initializable{
       "and city.countryId = country.countryId ");
     
     ResultSet customerSet = stmt.executeQuery();
-    
-    
     
     while(customerSet.next()){
       
@@ -246,9 +246,12 @@ public class SchedulesController extends Thread implements Initializable{
     custTbl.setItems(customers);
     custTbl.getSelectionModel().selectFirst();
     
+    DBConnection.disconnect();
   }
   
-  public void getAllAppts() throws SQLException{
+  public void getAllAppts() throws SQLException, ClassNotFoundException, IOException{
+    
+    DBConnection.connect();
     
     PreparedStatement stmt = DBConnection.conn.prepareStatement(
       "select customer.customerName, customer.customerId, appointment.appointmentId, " +
@@ -292,6 +295,7 @@ public class SchedulesController extends Thread implements Initializable{
     apptTbl.setItems(appointments);
     apptTbl.getSelectionModel().selectFirst();
     
+    DBConnection.disconnect();
   }
 
   @FXML
@@ -463,7 +467,9 @@ public class SchedulesController extends Thread implements Initializable{
   }
   
   @FXML
-  private void viewApptByType() throws SQLException{
+  private void viewApptByType() throws SQLException, ClassNotFoundException, IOException{
+    
+    DBConnection.connect();
     
     PreparedStatement stmt = DBConnection.conn.prepareStatement(
       "select month(start), count(*), description " +
@@ -515,6 +521,8 @@ public class SchedulesController extends Thread implements Initializable{
       
     }
     
+    DBConnection.disconnect();
+    
     Scene scene  = new Scene(bc,800,600);
     bc.getData().addAll(series1, series2, series3);
     stage.setScene(scene);
@@ -538,7 +546,9 @@ public class SchedulesController extends Thread implements Initializable{
   }
   
   @FXML
-  private void viewApptByCountry() throws SQLException {
+  private void viewApptByCountry() throws SQLException, ClassNotFoundException, IOException{
+    
+    DBConnection.connect();
     
     PreparedStatement stmt = DBConnection.conn.prepareStatement(
       "select country.country, count(appointmentId) " +
@@ -569,6 +579,8 @@ public class SchedulesController extends Thread implements Initializable{
     
     final PieChart chart = new PieChart(pieChartData);
     chart.setTitle("Appointments by Customer Country");
+    
+    DBConnection.disconnect();
     
     Stage stage = new Stage();
     Scene scene = new Scene(new Group());
